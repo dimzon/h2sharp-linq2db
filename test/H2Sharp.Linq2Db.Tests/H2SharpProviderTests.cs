@@ -84,6 +84,38 @@ public class H2SharpProviderTests
     }
 
     [Fact]
+    public async Task The_generated_SQL_is_H2s()
+    {
+        await using var db = Open(nameof(The_generated_SQL_is_H2s));
+
+        await db.ExecuteAsync(
+            """
+            CREATE TABLE "Rows" (
+                "Id" integer NOT NULL,
+                "Name" varchar(50) NOT NULL,
+                "Price" numeric(10,2) NOT NULL,
+                CONSTRAINT "PK_Rows" PRIMARY KEY ("Id")
+            )
+            """);
+
+        await db.InsertAsync(new Row { Id = 1, Name = "abc", Price = 5m });
+
+        _ = await db.GetTable<Row>().Where(r => r.Price > 10m).ToListAsync();
+
+        var sql = db.LastQuery ?? "";
+
+        // Every identifier is quoted: H2 folds an unquoted one to upper case and leaves a quoted
+        // one alone, so the two spellings of a name are two different names.
+        Assert.Contains("\"Rows\"", sql);
+        Assert.Contains("\"Price\"", sql);
+
+        // The alias is written without the AS. The grammar allows both ("[ [ AS ] newTableAlias ]"),
+        // and this is the form the engine reads.
+        Assert.Contains("\"Rows\" \"r\"", sql);
+        Assert.DoesNotContain(" AS ", sql);
+    }
+
+    [Fact]
     public void The_schema_provider_refuses_instead_of_answering_with_nothing()
     {
         // The port has no INFORMATION_SCHEMA and the engine's catalogue is not reachable from the

@@ -75,7 +75,8 @@
 * Движок — соседний checkout (`../h2sharp`), путь переопределяется свойством `H2SharpProject`.
 * linq2db — **релизный пакет с nuget.org** (`6.5.0`), а не исходники: исходники нужны только
   для чтения API.
-* Сборка: `dotnet build src/H2Sharp.Linq2Db/H2Sharp.Linq2Db.csproj -c Release`.
+* Сборка: `dotnet build src/H2Sharp.Linq2Db/H2Sharp.Linq2Db.csproj -c Release` (движок и linq2db берутся
+  соседними checkout'ами).
 * Тесты: `dotnet test test/H2Sharp.Linq2Db.Tests/H2Sharp.Linq2Db.Tests.csproj -c Release --no-build`.
 * PowerShell-регулярками **не править исходники**: они портят кавычки и переводы строк. Только
   `edit`/`write`.

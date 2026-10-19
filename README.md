@@ -43,6 +43,7 @@ the like) are the connection string's other keys.
 | Paging | `LIMIT n` / `OFFSET n` |
 | Concatenation | `\|\|`, which H2 has |
 | Parameters | named `@name`, which the engine rewrites into `?` before the statement is parsed |
+| Table alias | without the `AS`: `FROM "Rows" "r"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and this is the one the engine reads |
 
 The capabilities the provider declares are H2 2.5's, not the engine's current ones: a provider that
 declared the engine's abilities would be describing a database that does not exist.

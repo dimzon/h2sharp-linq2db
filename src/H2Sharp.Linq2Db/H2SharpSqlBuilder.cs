@@ -121,6 +121,30 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
             "not through a query.");
 
     /// <inheritdoc />
+    public override StringBuilder Convert(StringBuilder sb, string value, ConvertType convertType)
+        => convertType switch
+        {
+            // H2 names a parameter "@name" and rewrites it into "?" before the statement is parsed.
+            ConvertType.NameToQueryParameter or
+            ConvertType.NameToCommandParameter or
+            ConvertType.NameToSprocParameter => sb.Append('@').Append(value),
+
+            // H2 folds an unquoted identifier to upper case and leaves a quoted one alone, so the
+            // two spellings of the same name are two different names. Every identifier is quoted
+            // here, which is the only way to reach the name the model has.
+            ConvertType.NameToQueryField or
+            ConvertType.NameToQueryFieldAlias or
+            ConvertType.NameToQueryTable or
+            ConvertType.NameToQueryTableAlias or
+            ConvertType.NameToCteName or
+            ConvertType.NameToDatabase or
+            ConvertType.NameToSchema or
+            ConvertType.SequenceName => sb.Append('"').Append(value).Append('"'),
+
+            _ => base.Convert(sb, value, convertType)
+        };
+
+    /// <inheritdoc />
     protected override void BuildDataTypeFromDataType(DbDataType type, bool forCreateTable, bool canBeNull)
     {
         switch (type.DataType & ~DataType.Array)

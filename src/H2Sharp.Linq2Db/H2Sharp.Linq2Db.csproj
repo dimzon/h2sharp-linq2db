@@ -17,8 +17,17 @@
     <H2SharpProject Condition="'$(H2SharpProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\h2sharp\src\H2Sharp\H2Sharp.csproj</H2SharpProject>
   </PropertyGroup>
 
+  <!--
+    linq2db comes from a local checkout too, not from the nuget package: the core is being
+    instrumented while the provider's behaviour is being worked out, and a package cannot be
+    instrumented. Set LinqToDbProject to point elsewhere to build against the released package.
+  -->
+  <PropertyGroup>
+    <LinqToDbProject Condition="'$(LinqToDbProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\linq2db\Source\LinqToDB\LinqToDB.csproj</LinqToDbProject>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="linq2db" />
+    <ProjectReference Include="$(LinqToDbProject)" SetTargetFramework="TargetFramework=net10.0" />
   </ItemGroup>
 
   <ItemGroup>
