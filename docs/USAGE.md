@@ -385,7 +385,7 @@ as it stands. The things that wait for the engine:
 | foreign keys in DDL | `CONSTRAINT ... FOREIGN KEY ...` |
 | `OVER` | window functions |
 | `LIMIT` with a number in a parameter | `LIMIT/OFFSET takes an integer literal here` |
-| large objects | `ValueLob.copyToResult: lob storage is not ported` |
+| large objects | `ValueLob.copyToResult: lob storage is not ported` — the storage of a large object is in the port (`ValueLob`, `LobData`, MVStore); the copy from the storage into the result is not, so a `clob` column cannot be read back |
 | `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
 | two parameters in one expression | `SELECT ? [*]+ ?` |
 | `DB_CLOSE_DELAY` and file databases | `Not ported yet: Engine.openSession: persistent databases need the file store` — a pooled connection takes the database with it |

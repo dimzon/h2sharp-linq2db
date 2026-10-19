@@ -55,7 +55,7 @@
 | оконные функции | `OVER`/`FILTER` не портированы | дефект порта |
 | `COMMENT ON` | `COMMENT ON TABLE "Rows" IS ...` — ожидалось `statement` | дефект порта |
 | внешние ключи в DDL | `CONSTRAINT ... FOREIGN KEY (...) REFERENCES ...` — ожидалось `)` | дефект порта |
-| хранение больших объектов | `Not ported yet: ValueLob.copyToResult: lob storage is not ported` | дефект порта |
+| чтение большого объекта | `ValueLob.copyToResult: lob storage is not ported` — само хранилище больших объектов в порте есть (`ValueLob`, `LobData`, MVStore), не портирован путь из хранилища в результат, поэтому колонку `clob` прочитать нельзя | дефект порта |
 | `TIME` из `TimeSpan` | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` | дефект порта |
 | два параметра в выражении | `SELECT ? [*]+ ?` — ожидалось `statement` | дефект порта |
 | `LIMIT` с параметром | `Not ported yet: Parser.parseQuerySelect: LIMIT/OFFSET takes an integer literal here` | дефект порта |
