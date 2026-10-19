@@ -110,7 +110,7 @@ public class H2SharpProvider : DataProviderBase
             // that into "?" before the statement is parsed, looking the parameter up by the name
             // without the "@". A parameter named with the "@" would not be found.
             h2Parameter.ParameterName = name;
-            h2Parameter.Value     = value;
+            h2Parameter.Value         = value ?? DBNull.Value;
         }
         else
         {

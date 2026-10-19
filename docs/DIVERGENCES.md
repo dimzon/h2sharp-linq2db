@@ -55,6 +55,9 @@
 | оконные функции | `OVER`/`FILTER` не портированы | дефект порта |
 | `COMMENT ON` | `COMMENT ON TABLE "Rows" IS ...` — ожидалось `statement` | дефект порта |
 | внешние ключи в DDL | `CONSTRAINT ... FOREIGN KEY (...) REFERENCES ...` — ожидалось `)` | дефект порта |
+| хранение больших объектов | `Not ported yet: ValueLob.copyToResult: lob storage is not ported` | дефект порта |
+| `TIME` из `TimeSpan` | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` | дефект порта |
+| два параметра в выражении | `SELECT ? [*]+ ?` — ожидалось `statement` | дефект порта |
 
 ## Что схемный провайдер делает и почему
 
