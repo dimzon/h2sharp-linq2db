@@ -1,0 +1,101 @@
+/*
+ * Copyright 2026 H2Sharp contributors.
+ * Licensed under the MIT License (see LICENSE).
+ */
+using LinqToDB;
+using LinqToDB.Async;
+using LinqToDB.Data;
+using LinqToDB.Mapping;
+
+using LinqToDB.DataProvider.H2Sharp;
+
+using Xunit;
+
+namespace H2Sharp.Linq2Db.Tests;
+
+/// <summary>
+///     The provider against the engine: a query that goes through linq2db and comes back.
+/// </summary>
+public class H2SharpProviderTests
+{
+    [Table("Rows")]
+    public class Row
+    {
+        [Column("Id", IsPrimaryKey = true, IsIdentity = false)]
+        public int Id { get; set; }
+
+        [Column("Name")]
+        public string Name { get; set; } = "";
+
+        [Column("Price")]
+        public decimal Price { get; set; }
+    }
+
+    private static DataConnection Open(string name)
+        => H2SharpTools.CreateDataConnection($"jdbc:h2:mem:{name}");
+
+    [Fact]
+    public async Task A_query_goes_through_the_provider_and_the_engine()
+    {
+        await using var db = Open(nameof(A_query_goes_through_the_provider_and_the_engine));
+
+        await db.ExecuteAsync(
+            """
+            CREATE TABLE "Rows" (
+                "Id" integer NOT NULL,
+                "Name" varchar(50) NOT NULL,
+                "Price" numeric(10,2) NOT NULL,
+                CONSTRAINT "PK_Rows" PRIMARY KEY ("Id")
+            )
+            """);
+
+        await db.InsertAsync(new Row { Id = 1, Name = "abc", Price = 5m });
+        await db.InsertAsync(new Row { Id = 2, Name = "def", Price = 15m });
+
+        var rows = await db.GetTable<Row>().OrderBy(r => r.Id).ToListAsync();
+
+        Assert.Equal(2, rows.Count);
+        Assert.Equal("abc", rows[0].Name);
+        Assert.Equal(15m, rows[1].Price);
+    }
+
+    [Fact]
+    public async Task A_filter_becomes_a_parameter()
+    {
+        await using var db = Open(nameof(A_filter_becomes_a_parameter));
+
+        await db.ExecuteAsync(
+            """
+            CREATE TABLE "Rows" (
+                "Id" integer NOT NULL,
+                "Name" varchar(50) NOT NULL,
+                "Price" numeric(10,2) NOT NULL,
+                CONSTRAINT "PK_Rows" PRIMARY KEY ("Id")
+            )
+            """);
+
+        await db.InsertAsync(new Row { Id = 1, Name = "abc", Price = 5m });
+        await db.InsertAsync(new Row { Id = 2, Name = "def", Price = 15m });
+
+        var rows = await db.GetTable<Row>().Where(r => r.Price > 10m).ToListAsync();
+
+        Assert.Single(rows);
+        Assert.Equal("def", rows[0].Name);
+    }
+
+    [Fact]
+    public void The_schema_provider_refuses_instead_of_answering_with_nothing()
+    {
+        // The port has no INFORMATION_SCHEMA and the engine's catalogue is not reachable from the
+        // ADO layer, so the provider cannot enumerate anything. It says so: an empty schema would
+        // be a statement about the database, and this one is a statement about the port.
+        using var db = Open(nameof(The_schema_provider_refuses_instead_of_answering_with_nothing));
+
+        var provider = H2SharpTools.GetDataProvider();
+
+        var exception = Assert.Throws<NotSupportedException>(
+            () => provider.GetSchemaProvider().GetSchema(db));
+
+        Assert.Contains("INFORMATION_SCHEMA", exception.Message, StringComparison.Ordinal);
+    }
+}

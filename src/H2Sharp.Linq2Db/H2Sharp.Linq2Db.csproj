@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>H2Sharp.Linq2Db</AssemblyName>
+    <RootNamespace>LinqToDB.DataProvider.H2Sharp</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    H2Sharp is the embedded H2 port this provider sits on. It is a sibling repository and is not
+    published to nuget.org yet, so it comes in as a project reference. Set H2SharpProject to point
+    elsewhere once the engine ships as a package.
+  -->
+  <PropertyGroup>
+    <H2SharpProject Condition="'$(H2SharpProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\h2sharp\src\H2Sharp\H2Sharp.csproj</H2SharpProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="linq2db" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(H2SharpProject)" SetTargetFramework="TargetFramework=net10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\NOTICE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
