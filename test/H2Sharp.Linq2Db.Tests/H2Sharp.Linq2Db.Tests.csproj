@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>H2Sharp.Linq2Db.Tests</AssemblyName>
     <RootNamespace>H2Sharp.Linq2Db.Tests</RootNamespace>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\H2Sharp.Linq2Db\H2Sharp.Linq2Db.csproj" />
-    <ProjectReference Include="$(H2SharpProject)" SetTargetFramework="TargetFramework=net10.0" />
+    <ProjectReference Include="$(H2SharpProject)" />
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,9 @@ The **linq2db** provider for **H2Sharp** — the C# port of H2 Database 2.5.
 > work and what is this provider's is listed in
 > [docs/DIVERGENCES.md](docs/DIVERGENCES.md).
 
+The provider is built for **.NET 8** and **.NET 10**; the engine under it has both as well.
+
+
 ## What it is
 
 A provider for [linq2db](https://github.com/linq2db/linq2db), written from scratch against

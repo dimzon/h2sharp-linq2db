@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>H2Sharp.Linq2Db</AssemblyName>
     <RootNamespace>LinqToDB.DataProvider.H2Sharp</RootNamespace>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
@@ -26,12 +26,16 @@
     <LinqToDbProject Condition="'$(LinqToDbProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\linq2db\Source\LinqToDB\LinqToDB.csproj</LinqToDbProject>
   </PropertyGroup>
 
+  <!--
+    The references are not pinned to a framework: the engine and the core of linq2db both have a
+    net8.0 and a net10.0 build, and each target of this provider takes the one that matches it.
+  -->
   <ItemGroup>
-    <ProjectReference Include="$(LinqToDbProject)" SetTargetFramework="TargetFramework=net10.0" />
+    <ProjectReference Include="$(LinqToDbProject)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(H2SharpProject)" SetTargetFramework="TargetFramework=net10.0" />
+    <ProjectReference Include="$(H2SharpProject)" />
   </ItemGroup>
 
   <ItemGroup>
