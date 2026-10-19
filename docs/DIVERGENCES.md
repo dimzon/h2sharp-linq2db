@@ -61,6 +61,7 @@
 | `LIMIT` с параметром | `Not ported yet: Parser.parseQuerySelect: LIMIT/OFFSET takes an integer literal here` | дефект порта |
 | удвоенная кавычка в имени | `Tokenizer.ReadQuotedIdentifier` не читает `""` внутри имени | дефект порта |
 | `CREATE SEQUENCE` (в DDL провайдера) | `CREATE [*]SEQUENCE "SequenceRows_Id"` — ожидалось `TABLE` | дефект порта |
+| `CREATE ALIAS` (функции) | `CREATE [*]ALIAS "PARAM_FN" AS $$ ... $$` — ожидалось `TABLE` | дефект порта |
 
 ## Что схемный провайдер делает и почему
 
@@ -106,6 +107,31 @@
 | сгенерированный ключ приходит через ADO-канал generated keys | документация: «FINAL TABLE» и «retrieval of generated keys» |
 | `DOUBLE` и `DOUBLE PRECISION` — один и тот же тип | порт: `"DOUBLE PRECISION", "DOUBLE", "FLOAT8"`; jar: оба принимаются |
 | `VARCHAR`, `CHAR`, `NUMERIC`, `VARBINARY`, `UUID`, `JSON`, `CLOB`, `BLOB`, `TIMESTAMP`, `TIME`, `BOOLEAN`, `SMALLINT`, `INTEGER`, `BIGINT`, `REAL` принимаются | jar на JVM: все приняты |
+
+## Что из тестов PostgreSQL перенести нельзя
+
+Тесты PostgreSQL переносятся в H2, но не все: часть из них проверяет то, чего в H2 2.5 нет и
+не будет. Такие тесты выброшены, и это записано здесь, а не забыто.
+
+| Тест | Почему не переносится |
+|---|---|
+| `TestJsonb` | у H2 2.5 нет типа `jsonb`, есть `json` |
+| `TestXml` | у H2 2.5 нет типа `XML` |
+| `TestRange`, `TestRangeBulkCopy` | у H2 2.5 нет типов диапазонов (`int4range` и подобных) |
+| `UnnestTest`, `UnnestTest2` | `unnest` — функция PostgreSQL; в H2 2.5 её нет |
+| `PartitionedTables` | в H2 2.5 нет партиционирования таблиц |
+| `UIntXXMappingTest` | в H2 2.5 нет беззнаковых целых типов |
+| `TestBigInteger` | в H2 2.5 нет типа `bigint` шире 64 бит |
+| `TestCustomType`, `TestRecordTableFunction`, `TestDynamicRecordFunction` | составные типы и `record` — понятие PostgreSQL; в H2 2.5 их нет |
+| `TestCustomAggregate` | `CREATE AGGREGATE` в H2 2.5 принимает имя класса Java, а не текст агрегата |
+| `BulkCopy*` | `BinaryCopy` — протокол PostgreSQL; у H2 2.5 нет ничего похожего, и в движке нет массовой загрузки |
+| `PostgreSQLArrayTests`, `PostgreSQLExtensionsTests`, `Extensions/PostgreSQLTests*`, `Types/PostgreSQLTypeTests` | типы и расширения `Npgsql`: `NpgsqlPoint`, `NpgsqlInet`, `NpgsqlTypes`, `jsonb` — в H2 2.5 ничего подобного нет |
+
+А вот что переносится и стоит красным по вине порта, остаётся в наборе с трейтом
+`BlockedByPort`: функции (`CREATE ALIAS` в H2 2.5 — это Java, и порту нужен свой способ
+определить функцию), `CREATE SEQUENCE`, `INFORMATION_SCHEMA`, `COMMENT ON`, внешние ключи,
+identity, `LIMIT` с параметром, удвоенная кавычка в имени, большие объекты, `INTERVAL` в `TIME`
+и два параметра в выражении.
 
 ## Набор тестов linq2db
 
