@@ -23,6 +23,7 @@ The rules the work follows are in [AGENTS.md](AGENTS.md); where the provider com
 ## Using it
 
 ```csharp
+using LinqToDB;
 using LinqToDB.DataProvider.H2Sharp;
 
 await using var db = H2SharpTools.CreateDataConnection("jdbc:h2:mem:mydb");
@@ -36,6 +37,11 @@ var rows = await db.GetTable<Row>()
 The connection string is the JDBC URL. The ADO.NET spelling works too — `Data Source=mem:mydb`
 names the same database and is translated — and the settings a URL carries (`MODE=PostgreSQL` and
 the like) are the connection string's other keys.
+
+**[docs/USAGE.md](docs/USAGE.md) is the guide**: connecting, a data context, mapping, the
+functions of H2, window functions, scaffolding, reading the catalogue, the SQL the provider
+generates, and what does not work yet.
+
 
 ## What it generates
 

@@ -62,6 +62,7 @@
 | удвоенная кавычка в имени | `Tokenizer.ReadQuotedIdentifier` не читает `""` внутри имени | дефект порта |
 | `CREATE SEQUENCE` (в DDL провайдера) | `CREATE [*]SEQUENCE "SequenceRows_Id"` — ожидалось `TABLE` | дефект порта |
 | `CREATE ALIAS` (функции) | `CREATE [*]ALIAS "PARAM_FN" AS $$ ... $$` — ожидалось `TABLE` | дефект порта |
+| `DB_CLOSE_DELAY` и файловые базы | `Not ported yet: Engine.openSession: persistent databases need the file store` — соединение из пула уносит базу с собой | дефект порта |
 
 ## Что схемный провайдер делает и почему
 
