@@ -58,6 +58,9 @@
 | хранение больших объектов | `Not ported yet: ValueLob.copyToResult: lob storage is not ported` | дефект порта |
 | `TIME` из `TimeSpan` | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` | дефект порта |
 | два параметра в выражении | `SELECT ? [*]+ ?` — ожидалось `statement` | дефект порта |
+| `LIMIT` с параметром | `Not ported yet: Parser.parseQuerySelect: LIMIT/OFFSET takes an integer literal here` | дефект порта |
+| удвоенная кавычка в имени | `Tokenizer.ReadQuotedIdentifier` не читает `""` внутри имени | дефект порта |
+| `CREATE SEQUENCE` (в DDL провайдера) | `CREATE [*]SEQUENCE "SequenceRows_Id"` — ожидалось `TABLE` | дефект порта |
 
 ## Что схемный провайдер делает и почему
 
