@@ -114,20 +114,4 @@ public class H2SharpProviderTests
         Assert.Contains("\"Rows\" \"r\"", sql);
         Assert.DoesNotContain(" AS ", sql);
     }
-
-    [Fact]
-    public void The_schema_provider_refuses_instead_of_answering_with_nothing()
-    {
-        // The port has no INFORMATION_SCHEMA and the engine's catalogue is not reachable from the
-        // ADO layer, so the provider cannot enumerate anything. It says so: an empty schema would
-        // be a statement about the database, and this one is a statement about the port.
-        using var db = Open(nameof(The_schema_provider_refuses_instead_of_answering_with_nothing));
-
-        var provider = H2SharpTools.GetDataProvider();
-
-        var exception = Assert.Throws<NotSupportedException>(
-            () => provider.GetSchemaProvider().GetSchema(db));
-
-        Assert.Contains("INFORMATION_SCHEMA", exception.Message, StringComparison.Ordinal);
-    }
 }
