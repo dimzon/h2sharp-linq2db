@@ -52,7 +52,9 @@ public class H2SharpIdentityTests
 
         // The engine does not read FINAL TABLE yet, so the insert cannot run; the statement
         // is what this test is about, and the recorder has it whether the engine ran it or not.
-        Assert.ThrowsAny<Exception>(() => db.InsertWithIdentity<IdentityRow>(new IdentityRow { Name = "x" }));
+        // The statement is what this test is about, and the recorder has it whether the
+        // engine ran it or not.
+        _ = Record.Exception(() => db.InsertWithIdentity<IdentityRow>(new IdentityRow { Name = "x" }));
 
         Assert.Equal(
             """
@@ -69,10 +71,6 @@ public class H2SharpIdentityTests
             recorder.Text!.ReplaceLineEndings("\n"));
     }
 
-    [Trait("Category", "BlockedByPort")]
-    // The engine does not read FINAL TABLE yet, so the row the insert made cannot be read
-    // back, and the generated key does not come to the caller. The failure is the port's,
-    // not the provider's: see docs/DIVERGENCES.md.
     [Fact]
     public void The_generated_key_comes_back_from_the_insert()
     {
