@@ -46,7 +46,7 @@
 |---|---|---|
 | `INFORMATION_SCHEMA` | **читается** (коммит движка `17708ad`): каталог порта отдаёт таблицы, колонки, ключи и ссылки, и провайдер читает их тремя отдельными вопросами, без `JOIN` | — |
 | каталог отличается от эталонного | имя каталога — путь базы в URL (`mem:db`), а у H2 2.5 — имя базы; `collation` колонки пуст, а у эталона — collation базы | дефект порта |
-| `DB_CLOSE_DELAY` и файловые базы | `Not ported yet: Engine.openSession: persistent databases need the file store` — соединение из пула уносит базу с собой | дефект порта |
+| `DB_CLOSE_DELAY` и файловая база | `Not ported yet: Engine.openSession: persistent databases need the file store` — само хранилище в порте есть и формат его совместим с H2 2.5 (проверяет `MvStoreFileCompatTests`), но сессия не открывает файловую базу; и соединение из пула уносит базу с собой | дефект порта |
 | каталог движка из ADO-слоя | `H2Connection.Session` — `internal`, а `Schema.GetAllTablesAndViews` требует `SessionLocal` | дефект порта |
 | `JOIN` | `FROM T3 a [*]LEFT JOIN T3 b` — ожидалось `statement` | дефект порта |
 | `AS` перед алиасом таблицы | `SELECT a.Id FROM T3 AS [*]a` — ожидалось `statement` | дефект порта |
@@ -64,7 +64,7 @@
 | удвоенная кавычка в имени | `Tokenizer.ReadQuotedIdentifier` не читает `""` внутри имени | дефект порта |
 | `CREATE SEQUENCE` (в DDL провайдера) | `CREATE [*]SEQUENCE "SequenceRows_Id"` — ожидалось `TABLE` | дефект порта |
 | `CREATE ALIAS` (функции) | `CREATE [*]ALIAS "PARAM_FN" AS $$ ... $$` — ожидалось `TABLE` | дефект порта |
-| `DB_CLOSE_DELAY` и файловые базы | `Not ported yet: Engine.openSession: persistent databases need the file store` — соединение из пула уносит базу с собой | дефект порта |
+| `DB_CLOSE_DELAY` и файловая база | `Not ported yet: Engine.openSession: persistent databases need the file store` — само хранилище в порте есть и формат его совместим с H2 2.5 (проверяет `MvStoreFileCompatTests`), но сессия не открывает файловую базу; и соединение из пула уносит базу с собой | дефект порта |
 
 ## Что схемный провайдер делает и почему
 

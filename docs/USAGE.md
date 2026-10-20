@@ -56,7 +56,7 @@ public class Blog
 ```
 
 The database is an in-memory one, so it is gone when the connection is closed. A file database
-is named the way H2 names it — `jdbc:h2:./data/mydb` — and the engine has no file store yet, so
+is named the way H2 names it — `jdbc:h2:./data/mydb` — and a session does not open a file database yet, so
 for now only the in-memory one works.
 
 ## Getting the provider
@@ -106,7 +106,7 @@ public class BlogContext : DataContext
 
 A data context returns its connection to the pool between commands, and an in-memory database
 is gone when the last connection to it is closed. The engine knows neither `DB_CLOSE_DELAY` nor
-a file store yet, so for now a data context has no database to work in: hold a `DataConnection`
+a file database yet, so for now a data context has no database to work in: hold a `DataConnection`
 instead, or wait for the engine to grow.
 
 **By the name of a configuration.** The provider registers itself under the name `H2Sharp`
@@ -397,7 +397,7 @@ as it stands. The things that wait for the engine:
 | large objects | `ValueLob.copyToResult: lob storage is not ported` — the storage of a large object is in the port (`ValueLob`, `LobData`, MVStore); the copy from the storage into the result is not, so a `clob` column cannot be read back |
 | `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
 | two parameters in one expression | `SELECT ? [*]+ ?` |
-| `DB_CLOSE_DELAY` and file databases | `Not ported yet: Engine.openSession: persistent databases need the file store` — a pooled connection takes the database with it |
+| `DB_CLOSE_DELAY` and a file database | `Not ported yet: Engine.openSession: persistent databases need the file store` — the store itself is in the port and its format is compatible with H2 2.5, but a session does not open a file database; and a pooled connection takes the database with it |
 
 The full list, with what each of them costs, is in
 [docs/DIVERGENCES.md](../docs/DIVERGENCES.md).
