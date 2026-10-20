@@ -39,8 +39,8 @@ names the same database and is translated — and the settings a URL carries (`M
 the like) are the connection string's other keys.
 
 **[docs/USAGE.md](docs/USAGE.md) is the guide**: connecting, a data context, mapping, the
-functions of H2, window functions, scaffolding, reading the catalogue, the SQL the provider
-generates, and what does not work yet.
+functions of H2, the table functions of H2, window functions, scaffolding, reading the
+catalogue, the SQL the provider generates, and what does not work yet.
 
 
 ## What it generates

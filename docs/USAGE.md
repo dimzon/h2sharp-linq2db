@@ -292,6 +292,48 @@ The calls belong to the database and nowhere else. A call whose arguments are kn
 sent to the database, because there the function may be a different one, or may not be there
 at all.
 
+## Table functions
+
+H2 has table functions: a function that gives a *table*. The provider offers the range table
+of H2 under `H2SharpTableFunctions`, and it is called in the query like any other method:
+
+```csharp
+using LinqToDB.DataProvider.H2Sharp;
+
+var rows = await (from blog in db.GetTable<Blog>()
+                  from number in db.SystemRange(1, 3)
+                  where number.X <= blog.Id
+                  select new { blog.Name, number.X })
+    .ToListAsync();
+```
+
+`SYSTEM_RANGE(min, max)` gives a row per number of the range, and the number is the only
+column it has — `H2SharpRangeRow.X`. The step, when there is one, is added to the start and
+the range stops at the end: `SYSTEM_RANGE(1, 10, 2)` gives 1, 3, 5, 7, 9.
+
+The statement the provider writes for it is H2's own:
+
+```sql
+SELECT "row_1"."Name", "range_1"."X"
+FROM "Rows" "row_1", "SYSTEM_RANGE"(1, 3) "range_1"
+WHERE "range_1"."X" <= CAST("row_1"."Id" AS bigint)
+```
+
+**The bound of the range cannot depend on the row of an outer table.** H2 2.5 has no
+`LATERAL` and no `CROSS APPLY` — the grammar of H2 2.5 has neither word, and the reference
+refuses both — and the argument of a table function cannot be correlated with the row of
+an outer query either: the correlation of H2 lives in the subqueries of a statement, and the
+arguments of a table function are not one. The rows a query needs per row of a table are cut
+by a condition, as in the example above: the range is asked for its own bounds, and the
+condition says how many of them belong to the row.
+
+A query that asks for a bound that depends on the outer row is refused, with a message
+that says why.
+
+The port does not read a join yet — not a comma join, not `CROSS JOIN`, not `JOIN … ON` —
+so the rows of the range table do not come back until the engine grows. The statement the
+provider writes is the one H2 2.5 takes; the reference was asked and it takes it.
+
 ## Window functions
 
 H2 2.5 has the window functions: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `LAG`, `LEAD`,

@@ -116,6 +116,37 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
     /// <inheritdoc />
     /// <remarks>
     ///     <para>
+    ///         H2 2.5 has no <c>LATERAL</c> and no <c>CROSS APPLY</c>: the grammar of H2 2.5 has
+    ///         neither word, and the reference refuses both. A table function's argument cannot
+    ///         depend on the row of an outer query either — the reference answers
+    ///         <c>Column "T.NUM" not found</c> — because the correlation of H2 lives in the
+    ///         subqueries of a statement, and the arguments of a table function are not one.
+    ///     </para>
+    ///     <para>
+    ///         So the rows a query needs per row of a table are cut by a condition, and the
+    ///         function is asked for its own bounds. The range table of H2 is the case in point:
+    ///         <c>SYSTEM_RANGE(1, 3)</c> with the condition <c>r.X &lt;= t.Num</c> gives the rows
+    ///         the caller wants.
+    ///     </para>
+    /// </remarks>
+    protected override bool BuildJoinType(SqlJoinedTable join, SqlSearchCondition condition)
+    {
+        switch (join.JoinType)
+        {
+            case JoinType.CrossApply:
+            case JoinType.OuterApply:
+                throw new NotSupportedException(
+                    "H2 2.5 has no LATERAL and no CROSS APPLY: the argument of a table function " +
+                    "cannot depend on the row of an outer query. Ask the function for its own " +
+                    "bounds and cut the rows with a condition.");
+        }
+
+        return base.BuildJoinType(join, condition);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    ///     <para>
     ///         H2 2.5 has no <c>RETURNING</c>: the reference was asked, and it refuses the clause.
     ///         The row an insert made is read through <c>FINAL TABLE</c>, which is the form the H2
     ///         grammar has for it (<c>{ OLD | NEW | FINAL } TABLE</c>).
