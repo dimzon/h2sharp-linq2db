@@ -246,10 +246,29 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
             case DataType.Date     : StringBuilder.Append("date"); break;
             case DataType.Time     : StringBuilder.Append("time"); break;
             case DataType.DateTime : StringBuilder.Append("timestamp"); break;
+
+            // A DateTimeOffset is a point of time with an offset, and H2 keeps that in the
+            // type TIMESTAMP WITH TIME ZONE. Without this case the column was created as
+            // a varchar, because the switch knew nothing about the type.
+            case DataType.DateTimeOffset:
+            case DataType.DateTimeTz:
+            case DataType.DateTime2Tz:
+                StringBuilder.Append("timestamp with time zone");
+                break;
+
             case DataType.Guid     : StringBuilder.Append("uuid"); break;
             case DataType.VarBinary: StringBuilder.Append("varbinary"); break;
             case DataType.Json     : StringBuilder.Append("json"); break;
             default               : StringBuilder.Append("varchar"); break;
+        }
+
+        // An array is the type of its elements and the word ARRAY after it: INTEGER ARRAY.
+        // The brackets of PostgreSQL (integer[]) H2 does not know. The port does not read
+        // the type ARRAY yet, so a table with such a column cannot be created against it;
+        // the form written here is the one the reference engine takes.
+        if ((type.DataType & DataType.Array) != 0)
+        {
+            StringBuilder.Append(" ARRAY");
         }
 
         if (forCreateTable && !canBeNull)
