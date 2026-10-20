@@ -114,11 +114,60 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
         => null;
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     <para>
+    ///         H2 2.5 has no <c>RETURNING</c>: the reference was asked, and it refuses the clause.
+    ///         The row an insert made is read through <c>FINAL TABLE</c>, which is the form the H2
+    ///         grammar has for it (<c>{ OLD | NEW | FINAL } TABLE</c>).
+    ///     </para>
+    ///     <para>
+    ///         <c>RETURNING</c> only appends to the insert, and PostgreSQL's provider builds it
+    ///         in the place where the insert is written. <c>FINAL TABLE</c> wraps the insert, so
+    ///         the insert is built into a buffer of its own and the statement is wrapped around
+    ///         it: the value the insert made comes back in the first column of the first row,
+    ///         which is where linq2db reads it from.
+    ///     </para>
+    /// </remarks>
+    protected override void BuildInsertQuery(SqlStatement statement, SqlInsertClause insertClause, bool addAlias)
+    {
+        if (!insertClause.WithIdentity)
+        {
+            base.BuildInsertQuery(statement, insertClause, addAlias);
+            return;
+        }
+
+        SqlField? identityField = insertClause.Into?.GetIdentityField();
+        if (identityField is null)
+        {
+            throw new LinqToDBException(
+                $"Identity field must be defined for '{insertClause.Into?.TableName.Name}'.");
+        }
+
+        var insert = new StringBuilder();
+
+        StringBuilder outer = StringBuilder;
+        StringBuilder = insert;
+        try
+        {
+            base.BuildInsertQuery(statement, insertClause, addAlias);
+        }
+        finally
+        {
+            StringBuilder = outer;
+        }
+
+        outer.Append("SELECT ");
+        Convert(outer, identityField.PhysicalName, ConvertType.NameToQueryField);
+        outer.Append(" FROM FINAL TABLE (");
+        outer.Append(insert);
+        outer.Append(')');
+    }
+
+    /// <inheritdoc />
     protected override void BuildGetIdentity(SqlInsertClause insertClause)
-        => throw new NotSupportedException(
-            "H2 2.5 has no identity function: SCOPE_IDENTITY(), IDENTITY() and LAST_INSERT_ID() do " +
-            "not exist in it. The generated value comes back through the command's generated keys, " +
-            "not through a query.");
+        // The identity clause of H2 wraps the insert, and the wrap is written where the insert
+        // is built: there is nothing to append here.
+        => _ = insertClause;
 
     /// <inheritdoc />
     public override StringBuilder Convert(StringBuilder sb, string value, ConvertType convertType)
