@@ -270,7 +270,6 @@ public class UsageExamplesTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_catalogue_is_read()
     {
         using var db = H2SharpTools.CreateDataConnection("jdbc:h2:mem:catalogue");

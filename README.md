@@ -62,6 +62,10 @@ declared the engine's abilities would be describing a database that does not exi
 The provider talks to **H2Sharp**, a sibling checkout (`../h2sharp`); the path is overridden with
 the `H2SharpProject` property. The engine is dual-licensed under the MPL 2.0 and the EPL 1.0.
 
+The engine is at <https://github.com/dimzon/h2sharp>, and the other provider of it, the Entity
+Framework Core one, is at <https://github.com/dimzon/h2sharp-efcore>.
+
+
 ## Licensing
 
 MIT; see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).

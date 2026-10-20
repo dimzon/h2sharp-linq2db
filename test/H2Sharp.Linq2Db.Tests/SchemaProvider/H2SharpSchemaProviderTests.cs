@@ -22,7 +22,6 @@ namespace H2Sharp.Linq2Db.Tests.SchemaProvider;
 public class H2SharpSchemaProviderTests
 {
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public async Task The_catalogue_lists_the_tables_and_their_columns()
     {
         await using var db = H2SharpDatabase.Open(nameof(The_catalogue_lists_the_tables_and_their_columns));
@@ -157,7 +156,6 @@ public class H2SharpSchemaProviderTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public async Task The_catalogue_leaves_its_own_tables_out()
     {
         await using var db = H2SharpDatabase.Open(nameof(The_catalogue_leaves_its_own_tables_out));

@@ -2,6 +2,7 @@
  * Copyright 2026 H2Sharp contributors.
  * Licensed under the MIT License (see LICENSE).
  */
+using System.Data;
 using System.Data.Common;
 using System.Globalization;
 
@@ -57,30 +58,29 @@ public class H2SharpSchemaProvider : ISchemaProvider
         ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION
         """;
 
-    private const string PrimaryKeysSql =
+    // The keys are read with three queries and matched in the provider, and not with one query
+    // that joins the tables of the catalogue. Both are SQL of H2 2.5, and the second one asks the
+    // engine for less than the first one does.
+    private const string ConstraintsSql =
         """
-        SELECT c.TABLE_SCHEMA, c.TABLE_NAME, k.CONSTRAINT_NAME, k.COLUMN_NAME, k.ORDINAL_POSITION
-        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS c
-        JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
-          ON k.CONSTRAINT_SCHEMA = c.CONSTRAINT_SCHEMA
-         AND k.CONSTRAINT_NAME   = c.CONSTRAINT_NAME
-        WHERE c.CONSTRAINT_TYPE = 'PRIMARY KEY'
-        ORDER BY c.TABLE_SCHEMA, c.TABLE_NAME, k.ORDINAL_POSITION
+        SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_SCHEMA, TABLE_NAME, CONSTRAINT_TYPE
+        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+        ORDER BY CONSTRAINT_SCHEMA, CONSTRAINT_NAME
         """;
 
-    private const string ForeignKeysSql =
+    private const string KeyColumnsSql =
         """
-        SELECT f.TABLE_SCHEMA, f.TABLE_NAME, f.CONSTRAINT_NAME, k.COLUMN_NAME, k.ORDINAL_POSITION,
-               r.UNIQUE_CONSTRAINT_NAME
-        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS f
-        JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS r
-          ON r.CONSTRAINT_SCHEMA = f.CONSTRAINT_SCHEMA
-         AND r.CONSTRAINT_NAME   = f.CONSTRAINT_NAME
-        JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
-          ON k.CONSTRAINT_SCHEMA = f.CONSTRAINT_SCHEMA
-         AND k.CONSTRAINT_NAME   = f.CONSTRAINT_NAME
-        WHERE f.CONSTRAINT_TYPE = 'FOREIGN KEY'
-        ORDER BY f.TABLE_SCHEMA, f.TABLE_NAME, f.CONSTRAINT_NAME, k.ORDINAL_POSITION
+        SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME,
+               ORDINAL_POSITION, POSITION_IN_UNIQUE_CONSTRAINT
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        ORDER BY CONSTRAINT_SCHEMA, CONSTRAINT_NAME, ORDINAL_POSITION
+        """;
+
+    private const string ReferencesSql =
+        """
+        SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_NAME
+        FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
+        ORDER BY CONSTRAINT_SCHEMA, CONSTRAINT_NAME
         """;
 
     private const string ReferencedColumnsSql =
@@ -137,26 +137,28 @@ public class H2SharpSchemaProvider : ISchemaProvider
         return schema;
     }
 
-    private static void ReadTables(DbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
+    private static void ReadTables(IDbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
     {
         var defaultSchema = options.DefaultSchema ?? DefaultSchema;
 
-        foreach (var row in Query(connection, TablesSql))
+        foreach (var (catalog, schemaName, name, type, remarks) in Query(connection, TablesSql, r => (
+                     Catalog:  Text(r, 0),
+                     Schema:   Text(r, 1),
+                     Name:     Text(r, 2),
+                     Type:     Text(r, 3),
+                     Remarks:  Text(r, 4))))
         {
-            var schemaName = row.GetString(1);
-            var name       = row.GetString(2);
-
             if (!Included(schemaName, options))
                 continue;
 
             schema.Tables.Add(new TableSchema
             {
                 ID              = TableId(schemaName, name),
-                CatalogName     = row.GetString(0),
+                CatalogName     = catalog,
                 SchemaName      = schemaName,
                 TableName       = name,
-                Description     = row.GetString(4),
-                IsView          = string.Equals(row.GetString(3), "VIEW", StringComparison.OrdinalIgnoreCase),
+                Description     = remarks,
+                IsView          = string.Equals(type, "VIEW", StringComparison.OrdinalIgnoreCase),
                 IsDefaultSchema = options.StringComparer.Equals(schemaName, defaultSchema),
                 TypeName        = ToValidName(name),
                 Columns         = [],
@@ -165,12 +167,23 @@ public class H2SharpSchemaProvider : ISchemaProvider
         }
     }
 
-    private static void ReadColumns(DbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
+    private static void ReadColumns(IDbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
     {
-        foreach (var row in Query(connection, ColumnsSql))
+        foreach (var row in Query(connection, ColumnsSql, r => (
+                     Schema:     Text(r, 0),
+                     Table:      Text(r, 1),
+                     Name:       Text(r, 2),
+                     Ordinal:    Number(r, 3),
+                     Nullable:   Text(r, 4),
+                     DataType:   Text(r, 5),
+                     Length:     (int?)BigNumber(r, 6),
+                     Precision:  Number(r, 7),
+                     Scale:      Number(r, 8),
+                     Identity:   Text(r, 9),
+                     Remarks:    Text(r, 10))))
         {
-            var schemaName = row.GetString(0);
-            var tableName  = row.GetString(1);
+            var schemaName = row.Schema;
+            var tableName  = row.Table;
 
             if (!Included(schemaName, options))
                 continue;
@@ -180,22 +193,22 @@ public class H2SharpSchemaProvider : ISchemaProvider
             if (table is null)
                 continue;
 
-            var dataType = row.GetString(5);
-            var length   = row.GetInt32(6);
-            var precision = row.GetInt32(7);
-            var scale     = row.GetInt32(8);
-            var nullable  = string.Equals(row.GetString(4), "YES", StringComparison.OrdinalIgnoreCase);
-            var identity  = string.Equals(row.GetString(9), "YES", StringComparison.OrdinalIgnoreCase);
+            var dataType = row.DataType;
+            var length   = row.Length;
+            var precision = row.Precision;
+            var scale     = row.Scale;
+            var nullable  = string.Equals(row.Nullable, "YES", StringComparison.OrdinalIgnoreCase);
+            var identity  = string.Equals(row.Identity, "YES", StringComparison.OrdinalIgnoreCase);
             var systemType = MapSystemType(dataType);
 
             table.Columns.Add(new ColumnSchema
             {
-                ColumnName     = row.GetString(2) ?? string.Empty,
+                ColumnName     = row.Name ?? string.Empty,
                 ColumnType     = ColumnType(dataType, length, precision, scale),
                 IsNullable     = nullable,
                 IsIdentity     = identity,
-                Description    = row.GetString(10),
-                MemberName     = ToValidName(row.GetString(2)),
+                Description    = row.Remarks,
+                MemberName     = ToValidName(row.Name),
                 MemberType     = ToTypeName(systemType, nullable),
                 SystemType     = systemType,
                 DataType       = MapDataType(dataType),
@@ -208,12 +221,37 @@ public class H2SharpSchemaProvider : ISchemaProvider
         }
     }
 
-    private static void ReadPrimaryKeys(DbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
+    private static void ReadPrimaryKeys(IDbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
     {
-        foreach (var row in Query(connection, PrimaryKeysSql))
+        // The constraint and the columns of it live in two tables of the catalogue, and they are
+        // asked for separately and matched here.
+        var primaryKeys = new HashSet<(string Schema, string Name)>();
+
+        foreach (var row in Query(connection, ConstraintsSql, r => (
+                     Schema:    Text(r, 0) ?? string.Empty,
+                     Name:      Text(r, 1) ?? string.Empty,
+                     Type:      Text(r, 4))))
         {
-            var schemaName = row.GetString(0);
-            var tableName  = row.GetString(1);
+            if (string.Equals(row.Type, "PRIMARY KEY", StringComparison.OrdinalIgnoreCase))
+                primaryKeys.Add((row.Schema, row.Name));
+        }
+
+        foreach (var row in Query(connection, KeyColumnsSql, r => (
+                     Schema:    Text(r, 0) ?? string.Empty,
+                     Name:      Text(r, 1) ?? string.Empty,
+                     Table:     Text(r, 2),
+                     TableName: Text(r, 3),
+                     Column:    Text(r, 4),
+                     Position:  Number(r, 5),
+                     InKey:     Number(r, 6))))
+        {
+            var key = (row.Schema, row.Name);
+
+            if (!primaryKeys.Contains(key))
+                continue;
+
+            var schemaName = row.Table;
+            var tableName  = row.TableName;
 
             if (!Included(schemaName, options))
                 continue;
@@ -224,57 +262,95 @@ public class H2SharpSchemaProvider : ISchemaProvider
                 continue;
 
             var column = table.Columns.FirstOrDefault(c =>
-                string.Equals(c.ColumnName, row.GetString(3), StringComparison.Ordinal));
+                string.Equals(c.ColumnName, row.Column, StringComparison.Ordinal));
 
             if (column is null)
                 continue;
 
             column.IsPrimaryKey   = true;
-            column.PrimaryKeyOrder = row.GetInt32(4) ?? 0;
+            // The catalogue counts the columns of a key from one, and the order of a key in
+            // linq2db starts at zero.
+            column.PrimaryKeyOrder = (row.Position ?? 1) - 1;
         }
     }
 
-    private static void ReadForeignKeys(DbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
+    private static void ReadForeignKeys(IDbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
     {
-        // The columns of the referenced key are read as well: a reference names the constraint it
-        // points at, and that constraint names its own columns.
-        var referenced = new Dictionary<(string Schema, string Name), (string Schema, string Table, string Column)[]>();
+        // Three questions: the constraints, the columns of every constraint, and the constraint
+        // that every reference points at. A reference names that constraint, and the constraint
+        // names its own columns.
+        var foreignKeys = new HashSet<(string Schema, string Name)>();
+        var references  = new Dictionary<(string Schema, string Name), string>();
 
-        foreach (var row in Query(connection, ReferencedColumnsSql))
+        foreach (var row in Query(connection, ConstraintsSql, r => (
+                     Schema:    Text(r, 0) ?? string.Empty,
+                     Name:      Text(r, 1) ?? string.Empty,
+                     Type:      Text(r, 4))))
         {
-            var key = (row.GetString(0) ?? string.Empty, row.GetString(1) ?? string.Empty);
+            if (string.Equals(row.Type, "FOREIGN KEY", StringComparison.OrdinalIgnoreCase))
+                foreignKeys.Add((row.Schema, row.Name));
+        }
 
-            referenced[key] = referenced.TryGetValue(key, out var columns)
-                ? [.. columns, (row.GetString(2)!, row.GetString(3)!, row.GetString(4)!)]
-                : [(row.GetString(2)!, row.GetString(3)!, row.GetString(4)!)];
+        foreach (var row in Query(connection, ReferencesSql, r => (
+                     Schema:   Text(r, 0) ?? string.Empty,
+                     Name:     Text(r, 1) ?? string.Empty,
+                     Unique:   Text(r, 2) ?? string.Empty)))
+        {
+            references[(row.Schema, row.Name)] = row.Unique;
+        }
+
+        // The columns of every constraint, by the constraint they belong to.
+        var keyColumns = new Dictionary<(string Schema, string Name), (string Schema, string Table, string Column, int Position, int InKey)[]>();
+
+        foreach (var row in Query(connection, KeyColumnsSql, r => (
+                     Schema:   Text(r, 0) ?? string.Empty,
+                     Name:     Text(r, 1) ?? string.Empty,
+                     Table:    Text(r, 2) ?? string.Empty,
+                     TableName:Text(r, 3) ?? string.Empty,
+                     Column:   Text(r, 4) ?? string.Empty,
+                     Position: Number(r, 5) ?? 0,
+                     InKey:    Number(r, 6) ?? 0)))
+        {
+            var key   = (row.Schema, row.Name);
+            var value = (row.Table, row.TableName, row.Column, row.Position, row.InKey);
+
+            keyColumns[key] = keyColumns.TryGetValue(key, out var list) ? [.. list, value] : [value];
         }
 
         var keys = new List<(string Name, TableSchema Table, string Column, TableSchema Other, string OtherColumn)>();
 
-        foreach (var row in Query(connection, ForeignKeysSql))
+        foreach (var key in foreignKeys)
         {
-            var schemaName = row.GetString(0);
-            var tableName  = row.GetString(1);
+            if (!keyColumns.TryGetValue(key, out var own) || own.Length == 0)
+                continue;
+
+            var schemaName = own[0].Schema;
+            var tableName  = own[0].Table;
 
             if (!Included(schemaName, options))
                 continue;
 
-            var uniqueName = row.GetString(5);
-            var position   = row.GetInt32(4) ?? 1;
-
-            if (uniqueName is null ||
-                !referenced.TryGetValue((schemaName!, uniqueName), out var target) ||
-                position < 1 ||
-                position > target.Length)
+            if (!references.TryGetValue(key, out var uniqueName) ||
+                !keyColumns.TryGetValue((key.Schema, uniqueName), out var target))
                 continue;
 
             var table = FindTable(schema, TableId(schemaName, tableName));
-            var other = FindTable(schema, TableId(target[position - 1].Schema, target[position - 1].Table));
+            var other = FindTable(schema, TableId(target[0].Schema, target[0].Table));
 
             if (table is null || other is null)
                 continue;
 
-            keys.Add((row.GetString(2)!, table, row.GetString(3)!, other, target[position - 1].Column));
+            foreach (var column in own)
+            {
+                // The position the column has in the referenced key says which column of that
+                // key it points at.
+                var referenced = target.FirstOrDefault(t => t.Position == column.InKey);
+
+                if (referenced.Column is null)
+                    continue;
+
+                keys.Add((key.Name, table, column.Column, other, referenced.Column));
+            }
         }
 
         foreach (var group in keys.GroupBy(k => (k.Name, k.Table)))
@@ -319,31 +395,35 @@ public class H2SharpSchemaProvider : ISchemaProvider
         }
     }
 
-    private static void ReadProcedures(DbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
+    private static void ReadProcedures(IDbConnection connection, GetSchemaOptions options, DatabaseSchema schema)
     {
         var parameters = new Dictionary<(string Schema, string Name), List<ParameterSchema>>();
 
-        foreach (var row in Query(connection, ParametersSql))
+        foreach (var row in Query(connection, ParametersSql, r => (
+                     Schema:     Text(r, 0) ?? string.Empty,
+                     Specific:   Text(r, 1) ?? string.Empty,
+                     Name:       Text(r, 2),
+                     Mode:       Text(r, 4),
+                     IsResult:   Text(r, 5),
+                     DataType:   Text(r, 6),
+                     Length:     (int?)BigNumber(r, 7),
+                     Precision:  Number(r, 8),
+                     Scale:      Number(r, 9))))
         {
-            var key = (row.GetString(0) ?? string.Empty, row.GetString(1) ?? string.Empty);
+            var key = (row.Schema, row.Specific);
 
-            var dataType   = row.GetString(6);
-            var length     = row.GetInt32(7);
-            var precision  = row.GetInt32(8);
-            var scale      = row.GetInt32(9);
-            var mode       = row.GetString(4);
-            var systemType = MapSystemType(dataType);
+            var systemType = MapSystemType(row.DataType);
 
             var parameter = new ParameterSchema
             {
-                ParameterName = ToValidName(row.GetString(2)),
+                ParameterName = ToValidName(row.Name),
                 ParameterType = ToTypeName(systemType, true),
                 SystemType    = systemType,
-                DataType      = MapDataType(dataType),
-                Size          = length,
-                IsIn          = string.Equals(mode, "IN", StringComparison.OrdinalIgnoreCase),
-                IsOut         = string.Equals(mode, "OUT", StringComparison.OrdinalIgnoreCase),
-                IsResult      = string.Equals(row.GetString(5), "YES", StringComparison.OrdinalIgnoreCase),
+                DataType      = MapDataType(row.DataType),
+                Size          = row.Length is null ? null : (int)row.Length,
+                IsIn          = string.Equals(row.Mode, "IN", StringComparison.OrdinalIgnoreCase),
+                IsOut         = string.Equals(row.Mode, "OUT", StringComparison.OrdinalIgnoreCase),
+                IsResult      = string.Equals(row.IsResult, "YES", StringComparison.OrdinalIgnoreCase),
             };
 
             if (!parameters.TryGetValue(key, out var list))
@@ -357,24 +437,30 @@ public class H2SharpSchemaProvider : ISchemaProvider
 
         var defaultSchema = options.DefaultSchema ?? DefaultSchema;
 
-        foreach (var row in Query(connection, RoutinesSql))
+        foreach (var row in Query(connection, RoutinesSql, r => (
+                     Schema:    Text(r, 0),
+                     Name:      Text(r, 1),
+                     Type:      Text(r, 2),
+                     Specific:  Text(r, 3),
+                     Definition:Text(r, 4),
+                     Remarks:   Text(r, 5))))
         {
-            var schemaName = row.GetString(0);
-            var name       = row.GetString(1);
+            var schemaName = row.Schema;
+            var name       = row.Name;
 
             if (!Included(schemaName, options))
                 continue;
 
-            var specificName = row.GetString(3);
+            var specificName = row.Specific;
 
             schema.Procedures.Add(new ProcedureSchema
             {
                 SchemaName      = schemaName,
                 ProcedureName   = name ?? string.Empty,
                 MemberName      = ToValidName(name),
-                IsFunction      = string.Equals(row.GetString(2), "FUNCTION", StringComparison.OrdinalIgnoreCase),
+                IsFunction      = string.Equals(row.Type, "FUNCTION", StringComparison.OrdinalIgnoreCase),
                 IsDefaultSchema = options.StringComparer.Equals(schemaName, defaultSchema),
-                Description     = row.GetString(5),
+                Description     = row.Remarks,
                 IsLoaded        = true,
                 Parameters      = specificName is not null &&
                                  parameters.TryGetValue((schemaName!, specificName), out var list)
@@ -430,11 +516,18 @@ public class H2SharpSchemaProvider : ISchemaProvider
     }
 
     /// <summary>
-    ///     Runs a query and hands the rows over one at a time.
+    ///     Runs a query and reads the rows it answers.
     /// </summary>
-    private static List<Row> Query(DbConnection connection, string sql)
+    /// <remarks>
+    ///     <para>
+    ///         The row is read while the reader is open, and it is read through the typed
+    ///         accessors of the reader, so that every value is taken as the type the catalogue
+    ///         gives it and is not converted afterwards.
+    ///     </para>
+    /// </remarks>
+    private static List<T> Query<T>(IDbConnection connection, string sql, Func<IDataReader, T> read)
     {
-        var rows = new List<Row>();
+        var rows = new List<T>();
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
@@ -442,10 +535,28 @@ public class H2SharpSchemaProvider : ISchemaProvider
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
-            rows.Add(new Row(reader));
+            rows.Add(read(reader));
 
         return rows;
     }
+
+    /// <summary>
+    ///     A text of a row, or nothing where the row has none.
+    /// </summary>
+    private static string? Text(IDataReader reader, int ordinal)
+        => reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+
+    /// <summary>
+    ///     A number of a row, or nothing where the row has none.
+    /// </summary>
+    private static int? Number(IDataReader reader, int ordinal)
+        => reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal);
+
+    /// <summary>
+    ///     A big number of a row, or nothing where the row has none.
+    /// </summary>
+    private static long? BigNumber(IDataReader reader, int ordinal)
+        => reader.IsDBNull(ordinal) ? null : reader.GetInt64(ordinal);
 
     /// <summary>
     ///     A name that can be a member name.
@@ -534,24 +645,4 @@ public class H2SharpSchemaProvider : ISchemaProvider
             "UUID"             => typeof(Guid),
             _                  => null,
         };
-
-    /// <summary>
-    ///     One row of a result, read by position.
-    /// </summary>
-    private sealed class Row(DbDataReader reader)
-    {
-        public string? GetString(int ordinal)
-        {
-            var value = reader.GetValue(ordinal);
-
-            return value is DBNull ? null : Convert.ToString(value, CultureInfo.InvariantCulture);
-        }
-
-        public int? GetInt32(int ordinal)
-        {
-            var value = reader.GetValue(ordinal);
-
-            return value is DBNull ? null : Convert.ToInt32(value, CultureInfo.InvariantCulture);
-        }
-    }
 }

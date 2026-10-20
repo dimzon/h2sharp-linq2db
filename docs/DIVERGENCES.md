@@ -44,7 +44,7 @@
 
 | Чего нет | Симптом | Это |
 |---|---|---|
-| `INFORMATION_SCHEMA` | каталог **в порте появился** (коммит движка `17708ad`): все представления H2 2.5 на месте, `TABLES`, `ROUTINES`, `PARAMETERS` читаются, но в `COLUMNS` строка короче объявленных столбцов на два значения ⇒ `IndexOutOfRangeException` на `REMARKS` и `SELECTIVITY` (а `IS_VISIBLE` и дальше читаются со сдвигом); и `JOIN` в порте не работает | дефект порта |
+| `INFORMATION_SCHEMA` | **читается** (коммит движка `17708ad`): каталог порта отдаёт таблицы, колонки, ключи и ссылки, и провайдер читает их тремя отдельными вопросами, без `JOIN` | — |
 | каталог движка из ADO-слоя | `H2Connection.Session` — `internal`, а `Schema.GetAllTablesAndViews` требует `SessionLocal` | дефект порта |
 | `JOIN` | `FROM T3 a [*]LEFT JOIN T3 b` — ожидалось `statement` | дефект порта |
 | `AS` перед алиасом таблицы | `SELECT a.Id FROM T3 AS [*]a` — ожидалось `statement` | дефект порта |
