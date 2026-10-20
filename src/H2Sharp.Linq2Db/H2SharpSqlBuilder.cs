@@ -160,6 +160,8 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
             case DataType.Decimal  : StringBuilder.Append("numeric"); break;
             case DataType.Money    : StringBuilder.Append("numeric"); break;
             case DataType.NVarChar : StringBuilder.Append("varchar"); break;
+            case DataType.Text    : StringBuilder.Append("clob"); break;
+            case DataType.NText   : StringBuilder.Append("clob"); break;
             case DataType.Char     : StringBuilder.Append("char"); break;
             case DataType.Date     : StringBuilder.Append("date"); break;
             case DataType.Time     : StringBuilder.Append("time"); break;
