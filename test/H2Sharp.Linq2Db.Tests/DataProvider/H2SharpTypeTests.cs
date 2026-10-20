@@ -72,24 +72,22 @@ public class H2SharpTypeTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void A_clob_comes_back_as_it_went_in()
     {
         using var db = H2SharpDatabase.Open(nameof(A_clob_comes_back_as_it_went_in));
 
-        // H2 2.5 holds a long text in a CHARACTER LARGE OBJECT column. The port has no storage for
-        // a large object yet and says so when the value is to be read.
+        // H2 2.5 holds a long text in a CHARACTER LARGE OBJECT column. The port keeps the value
+        // in the row and hands it over.
         H2SharpTypeRoundTrip.Check<string?>(db, "Clob", "clob", "567", DataType.Text);
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void Two_parameters_can_be_added_up()
     {
         using var db = H2SharpDatabase.Open(nameof(Two_parameters_can_be_added_up));
 
-        // H2 2.5 takes two parameters in one expression. The port rewrites the names of the
-        // parameters into question marks and then does not read the expression.
+        // H2 2.5 takes two parameters in one expression, and the port rewrites the names of the
+        // parameters into question marks and reads the expression.
         Assert.Equal(5, db.Execute<int>("SELECT @p1 + @p2", new { p1 = 2, p2 = 3 }));
     }
 

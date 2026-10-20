@@ -96,7 +96,6 @@ public class H2SharpSchemaProviderTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public async Task The_catalogue_knows_an_identity_column()
     {
         await using var db = H2SharpDatabase.Open(nameof(The_catalogue_knows_an_identity_column));
