@@ -404,6 +404,7 @@ as it stands. The things that wait for the engine:
 | `OVER` | window functions |
 | `LIMIT` with a number in a parameter | `LIMIT/OFFSET takes an integer literal here` |
 | `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
+| a derived table | linq2db puts the raw SQL of `FromSql` into a derived table, and the port does not read one: `Table "(" not found` |
 | the value of a generated key | H2 2.5 has neither `SCOPE_IDENTITY()`, nor `IDENTITY()`, nor `LAST_INSERT_ID()`, nor `RETURNING` — the row the insert made is read through `FINAL TABLE`, and the port does not read that: `Table "FINAL" not found` |
 | `DB_CLOSE_DELAY` and a file database | `Not ported yet: Engine.openSession: persistent databases need the file store` — the store itself is in the port and its format is compatible with H2 2.5, but a session does not open a file database; and a pooled connection takes the database with it |
 
