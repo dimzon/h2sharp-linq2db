@@ -103,4 +103,37 @@ public class H2SharpTypeFormTests
         Assert.Contains("\"Numbers\" integer ARRAY", recorder.Text!, StringComparison.Ordinal);
         Assert.DoesNotContain("integer[]", recorder.Text!, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void The_functions_of_an_array_are_the_functions_of_H2()
+    {
+        using var db = H2SharpDatabase.Open(nameof(The_functions_of_an_array_are_the_functions_of_H2));
+
+        SqlRecorder recorder = new();
+        db.AddInterceptor(recorder);
+
+        // The functions H2 2.5 has for an array: ARRAY_APPEND, ARRAY_CAT, ARRAY_CONTAINS,
+        // CARDINALITY and ARRAY_LENGTH. The reference answers [10, 20, 30, 40] for
+        // ARRAY_APPEND(ARRAY[10,20,30], 40) and TRUE for ARRAY_CONTAINS(ARRAY[1,NULL], NULL).
+        var query =
+            from row in db.GetTable<ArrayRow>()
+            select new
+            {
+                Appended = H2SharpSpecificExtensions.ArrayAppend(new[] { 10, 20, 30 }, 40),
+                Joined = H2SharpSpecificExtensions.ArrayCat(new[] { 10 }, new[] { 20 }),
+                Holds = H2SharpSpecificExtensions.ArrayContains(new[] { 10, 20 }, 20),
+                Size = H2SharpSpecificExtensions.Cardinality(new[] { 10, 20 }),
+                Length = H2SharpSpecificExtensions.ArrayLength(new[] { 10, 20 }),
+            };
+
+        _ = Record.Exception(() => query.ToList());
+
+        var text = recorder.Text ?? "";
+
+        Assert.Contains("ARRAY_APPEND", text, StringComparison.Ordinal);
+        Assert.Contains("ARRAY_CAT", text, StringComparison.Ordinal);
+        Assert.Contains("ARRAY_CONTAINS", text, StringComparison.Ordinal);
+        Assert.Contains("CARDINALITY", text, StringComparison.Ordinal);
+        Assert.Contains("ARRAY_LENGTH", text, StringComparison.Ordinal);
+    }
 }

@@ -484,4 +484,55 @@ public static class H2SharpSpecificExtensions
         => throw new ServerSideOnlyException(nameof(SoundexDifference));
 
     #endregion
+
+    #region Arrays
+
+    /// <summary>
+    ///     The array with one more element at the end: <c>ARRAY_APPEND(array, element)</c>.
+    /// </summary>
+    /// <remarks>
+    ///     H2 2.5 has no <c>array_append</c> of PostgreSQL -- the name is the same, but the
+    ///     argument order is the same too; what H2 has is the function of the same name, and the
+    ///     reference answers <c>[10, 20, 30, 40]</c> for <c>ARRAY_APPEND(ARRAY[10,20,30], 40)</c>.
+    /// </remarks>
+    [H2Function("ARRAY_APPEND")]
+    public static T[] ArrayAppend<T>(T[] array, T element)
+        => throw new ServerSideOnlyException(nameof(ArrayAppend));
+
+    /// <summary>
+    ///     The two arrays joined: <c>ARRAY_CAT(first, second)</c>.
+    /// </summary>
+    [H2Function("ARRAY_CAT")]
+    public static T[] ArrayCat<T>(T[] first, T[] second)
+        => throw new ServerSideOnlyException(nameof(ArrayCat));
+
+    /// <summary>
+    ///     Whether the array holds the element: <c>ARRAY_CONTAINS(array, element)</c>.
+    /// </summary>
+    /// <remarks>
+    ///     PostgreSQL answers the same question with the containment operator
+    ///     <c>array @&gt; ARRAY[element]</c>, and H2 2.5 has no such operator: the reference
+    ///     refuses <c>array @&gt; ARRAY[1]</c> with a syntax error. The function of H2 answers
+    ///     the nulls the way .NET's Contains does -- the reference answers TRUE for
+    ///     <c>ARRAY_CONTAINS(ARRAY[1,NULL], NULL)</c>.
+    /// </remarks>
+    [H2Function("ARRAY_CONTAINS")]
+    public static bool ArrayContains<T>(T[] array, T element)
+        => throw new ServerSideOnlyException(nameof(ArrayContains));
+
+    /// <summary>
+    ///     The number of the elements of an array: <c>CARDINALITY(array)</c>.
+    /// </summary>
+    [H2Function("CARDINALITY")]
+    public static int Cardinality<T>(T[] array)
+        => throw new ServerSideOnlyException(nameof(Cardinality));
+
+    /// <summary>
+    ///     The number of the elements of an array: <c>ARRAY_LENGTH(array)</c>.
+    /// </summary>
+    [H2Function("ARRAY_LENGTH")]
+    public static int ArrayLength<T>(T[] array)
+        => throw new ServerSideOnlyException(nameof(ArrayLength));
+
+    #endregion
 }

@@ -211,12 +211,16 @@ The types are H2's, not the ones of some other database:
 
 The name of an array is the name of the type of its elements and the word `ARRAY` after it —
 `integer ARRAY`, `varchar ARRAY`. H2 does not know the brackets of PostgreSQL (`integer[]`).
-The name of an array has to be said in the mapping schema, because linq2db asks the schema for
-the name of the type and not the provider:
+The mapping schema of the provider knows the array types, so the name does not have to be
+said by hand; it can still be, for a type the schema does not know:
 
 ```csharp
 db.MappingSchema.SetDataType(typeof(int[]), DataType.Int32 | DataType.Array);
 ```
+
+The functions of H2 for an array are `H2SharpSpecificExtensions.ArrayAppend`,
+`ArrayCat`, `ArrayContains`, `Cardinality` and `ArrayLength` — they are the functions of
+H2 2.5: `ARRAY_APPEND`, `ARRAY_CAT`, `ARRAY_CONTAINS`, `CARDINALITY` and `ARRAY_LENGTH`.
 
 The engine does not read the type `ARRAY` yet, so a table with such a column cannot be created
 against it — see docs/DIVERGENCES.md.
