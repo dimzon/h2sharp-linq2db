@@ -22,7 +22,7 @@
 | Публичный API | `H2SharpTools.GetDataProvider`, `CreateDataConnection`, `H2SharpProvider`, `H2SharpVersion` |
 | Генерация SQL | кавычки имён, типы H2, `LIMIT`/`OFFSET`, конкатенация через `\|\|` |
 | Флаги возможностей | по H2 2.5, а не по текущему порту |
-| Схемный провайдер | читает `INFORMATION_SCHEMA` по H2 2.5; порт каталога пока не умеет (см. ниже) |
+| Схемный провайдер | читает `INFORMATION_SCHEMA` по H2 2.5; каталог в порте появился, но пока без `REMARKS` в `COLUMNS` и без `JOIN` (см. ниже) |
 | Перевод членов | только общий: даты и математика H2-специфичны, перевод не написан |
 | Запрос, вставка, фильтр с параметром, порядок | работают против движка |
 
@@ -44,7 +44,7 @@
 
 | Чего нет | Симптом | Это |
 |---|---|---|
-| `INFORMATION_SCHEMA` | `Table "INFORMATION_SCHEMA" not found` | дефект порта |
+| `INFORMATION_SCHEMA` | каталог **в порте появился** (коммит движка `17708ad`): все представления H2 2.5 на месте, `TABLES`, `ROUTINES`, `PARAMETERS` читаются, но в `COLUMNS` строка короче объявленных столбцов на два значения ⇒ `IndexOutOfRangeException` на `REMARKS` и `SELECTIVITY` (а `IS_VISIBLE` и дальше читаются со сдвигом); и `JOIN` в порте не работает | дефект порта |
 | каталог движка из ADO-слоя | `H2Connection.Session` — `internal`, а `Schema.GetAllTablesAndViews` требует `SessionLocal` | дефект порта |
 | `JOIN` | `FROM T3 a [*]LEFT JOIN T3 b` — ожидалось `statement` | дефект порта |
 | `AS` перед алиасом таблицы | `SELECT a.Id FROM T3 AS [*]a` — ожидалось `statement` | дефект порта |
