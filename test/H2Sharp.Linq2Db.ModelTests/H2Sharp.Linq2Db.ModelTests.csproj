@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>H2Sharp.Linq2Db.ModelTests</AssemblyName>
+    <RootNamespace>H2Sharp.Linq2Db.ModelTests</RootNamespace>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <H2SharpProject Condition="'$(H2SharpProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\h2sharp\src\H2Sharp\H2Sharp.csproj</H2SharpProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.assert" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\H2Sharp.Linq2Db\H2Sharp.Linq2Db.csproj" />
+    <ProjectReference Include="$(H2SharpProject)" />
+  </ItemGroup>
+
+</Project>

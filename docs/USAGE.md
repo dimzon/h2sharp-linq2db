@@ -426,8 +426,8 @@ the catalogue compares every column of it with the reference and names both.
 |---|---|
 | Identifiers | always quoted, the way H2 documents it: an unquoted identifier folds to upper case and a quoted one does not |
 | Types | H2's own: `varchar`, `char`, `numeric`, `varbinary`, `uuid`, `json`, `clob`, `blob`, `timestamp`, `time`, `boolean`, `smallint`, `integer`, `bigint`, `real`, `double` |
-| Paging | `LIMIT n` / `OFFSET n` |
-| Concatenation | `\|\|`, which H2 has |
+| Paging | `LIMIT n` / `OFFSET n`, with the number written out |
+| Concatenation | `CONCAT(a, b)` — the function H2 2.5 has |
 | Parameters | named `@name`, which the engine rewrites into `?` before the statement is parsed |
 | Table alias | without the `AS`: `FROM "Blogs" "b"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and this is the one the engine reads |
 
@@ -436,8 +436,8 @@ that declared the engine's abilities would be describing a database that does no
 
 Two things to know when a query does not do what it should:
 
-* `First()` and `Take()` put a number into `LIMIT`, and the engine wants that number written
-  out. Until it does, read the rows and take the first one in the program.
+* The engine reads the number of a `LIMIT` only when it is written out, so the provider writes it
+  out: `LIMIT 3` and not `LIMIT @p`. The number is the same either way.
 * The engine has no `SCOPE_IDENTITY()`, `IDENTITY()` or `LAST_INSERT_ID()` — H2 2.5 has
   neither, and no `RETURNING` either. The value of a generated key comes back through
   `FINAL TABLE`, which is the form the H2 grammar has for it:
@@ -456,13 +456,16 @@ as it stands. The things that wait for the engine:
    | What | What happens |
    |---|---|
    | `CREATE ALIAS` | `CREATE [*]ALIAS ...` — functions of the database |
-| `COMMENT ON` | `COMMENT ON TABLE ...` |
-| foreign keys in DDL | `CONSTRAINT ... FOREIGN KEY ...` |
-| `OVER` | window functions |
-| `LIMIT` with a number in a parameter | `LIMIT/OFFSET takes an integer literal here` |
-| `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
-| a derived table | linq2db puts the raw SQL of `FromSql` into a derived table, and the port does not read one: `Table "(" not found` |
-| `DB_CLOSE_DELAY` and a file database | `Not ported yet: Engine.openSession: persistent databases need the file store` — the store itself is in the port and its format is compatible with H2 2.5, but a session does not open a file database; and a pooled connection takes the database with it |
+   | `COMMENT ON` | `COMMENT ON TABLE ...` |
+   | foreign keys in DDL | `CONSTRAINT ... FOREIGN KEY ...` |
+   | `OVER` | window functions |
+   | `EXISTS` | `Not ported yet: Parser.readTerm: the keyword function EXISTS is not ported` |
+   | the pipes `\|\|` | `SELECT 'a' [*]\|\| 'b'` — the reference takes it, the port does not read it |
+   | `CURRENT_TIMESTAMP` | `Not ported yet: ExpressionColumn.GetValue: no resolver is set on this expression` |
+   | `= ANY` with a list | `Not ported yet: Parser.parseQuerySelect: aggregate calls outside the select list are not ported` |
+   | `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
+   | a derived table | linq2db puts the raw SQL of `FromSql` into a derived table, and the port does not read one: `Table "(" not found` |
+   | `DB_CLOSE_DELAY` and a file database | `Not ported yet: Engine.openSession: persistent databases need the file store` — the store itself is in the port and its format is compatible with H2 2.5, but a session does not open a file database; and a pooled connection takes the database with it |
 
 The full list, with what each of them costs, is in
 [docs/DIVERGENCES.md](../docs/DIVERGENCES.md).
@@ -485,4 +488,12 @@ dotnet test test/H2Sharp.Linq2Db.Tests/H2Sharp.Linq2Db.Tests.csproj -c Release -
 
 # the port's defects, listed
 dotnet test test/H2Sharp.Linq2Db.Tests/H2Sharp.Linq2Db.Tests.csproj -c Release --filter "Category=BlockedByPort"
+```
+
+The `ModelTests` set asks the provider about a live database — a forum, filled with the same
+rows every run — and it comes in the same two runs:
+
+```bash
+dotnet test test/H2Sharp.Linq2Db.ModelTests/H2Sharp.Linq2Db.ModelTests.csproj -c Release --filter "Category!=BlockedByPort"
+dotnet test test/H2Sharp.Linq2Db.ModelTests/H2Sharp.Linq2Db.ModelTests.csproj -c Release --filter "Category=BlockedByPort"
 ```

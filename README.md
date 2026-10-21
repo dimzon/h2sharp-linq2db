@@ -50,7 +50,7 @@ catalogue, the SQL the provider generates, and what does not work yet.
 | Identifiers | always quoted, the way H2 documents it: an unquoted identifier folds to upper case and a quoted one does not |
 | Types | H2's own: `varchar`, `char`, `numeric`, `varbinary`, `uuid`, `json`, `clob`, `blob`, `timestamp`, `time`, `boolean`, `smallint`, `integer`, `bigint`, `real`, `double` |
 | Paging | `LIMIT n` / `OFFSET n` |
-| Concatenation | `\|\|`, which H2 has |
+| Concatenation | `CONCAT(a, b)` — the function H2 2.5 has |
 | Parameters | named `@name`, which the engine rewrites into `?` before the statement is parsed |
 | Table alias | without the `AS`: `FROM "Rows" "r"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and this is the one the engine reads |
 

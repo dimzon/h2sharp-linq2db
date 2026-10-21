@@ -93,3 +93,24 @@
 * Тесты: `dotnet test test/H2Sharp.Linq2Db.Tests/H2Sharp.Linq2Db.Tests.csproj -c Release --no-build`.
 * PowerShell-регулярками **не править исходники**: они портят кавычки и переводы строк. Только
   `edit`/`write`.
+
+## Наборы тестов
+
+| Набор | Что в нём |
+|---|---|
+| `H2Sharp.Linq2Db.Tests` | модульные тесты провайдера: типы, DDL, идентичность, каталог, функции |
+| `H2Sharp.Linq2Db.ModelTests` | модель форума: таблицы, наполнение базы одними и теми же строками, запросы по этим строкам, правка и удаление, типы, функции H2, сырые запросы, транзакции |
+
+Набор `ModelTests` отвечает на вопрос «провайдер умеет или нет» на живых данных: модель
+приложения, а не отдельные случаи. Он зелёный целиком, кроме тестов, помеченных
+`BlockedByPort`; каждый такой тест перечислен в `docs/DIVERGENCES.md` вместе с симптомом.
+
+## Покрытие
+
+* Покрытие меряется **только** набором `ModelTests`: он один идёт по провайдеру и по живому
+  провайдеру, и остальные наборы к нему ничего не добавляют.
+* Покрытие меряется в Debug: в Release инлайнинг мажет строки.
+* Замер: `dotnet test test/H2Sharp.Linq2Db.ModelTests/H2Sharp.Linq2Db.ModelTests.csproj -c Debug
+  --settings coverlet.runsettings --collect "XPlat Code Coverage" --results-directory TestResults`,
+  затем `pwsh tools/CheckCoverage.ps1 -ResultsDirectory TestResults`. Скрипт сливает
+  Cobertura-отчёты и держит порог; порог ставится по факту замера и только растёт.
