@@ -3,7 +3,7 @@
  * Licensed under the MIT License (see LICENSE).
  */
 using LinqToDB.Internal.SqlProvider;
-using LinqToDB.SqlQuery;
+using LinqToDB.Internal.SqlQuery;
 
 namespace LinqToDB.DataProvider.H2Sharp;
 
@@ -12,6 +12,12 @@ namespace LinqToDB.DataProvider.H2Sharp;
 /// </summary>
 /// <remarks>
 ///     H2 needs nothing that the common optimizer does not already do, so this optimizer adds
-///     nothing: the statement goes through as it was built.
+///     nothing: the statement goes through as it was built. The functions of H2 are rewritten on
+///     the way, in the visitor of the expressions.
 /// </remarks>
-public class H2SharpSqlOptimizer(SqlProviderFlags sqlProviderFlags) : BasicSqlOptimizer(sqlProviderFlags);
+public class H2SharpSqlOptimizer(SqlProviderFlags sqlProviderFlags) : BasicSqlOptimizer(sqlProviderFlags)
+{
+    /// <inheritdoc />
+    public override SqlExpressionConvertVisitor CreateConvertVisitor(bool allowModify)
+        => new H2SharpSqlExpressionConvertVisitor(allowModify);
+}

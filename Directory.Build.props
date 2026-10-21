@@ -7,7 +7,7 @@
       the other provider, are in the engine's docs/VERSIONING.md: the number says which linq2db
       the provider is for, the suffix says that the work is not finished.
     -->
-    <Version>6.5.0-alpha.1</Version>
+    <Version>6.5.1-alpha.1</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

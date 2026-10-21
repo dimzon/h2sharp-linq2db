@@ -48,5 +48,10 @@ public class H2SharpMappingSchema : MappingSchema
         SetDataType(typeof(TimeSpan[]), DataType.Time | DataType.Array);
         SetDataType(typeof(List<int>), DataType.Int32 | DataType.Array);
         SetDataType(typeof(List<string>), DataType.VarChar | DataType.Array);
+
+        // A byte array is a binary column and not an array of bytes: H2 keeps a sequence of
+        // bytes in a VARBINARY column, and the array of small integers is a different thing
+        // altogether. The column of a byte array was created as "smallint ARRAY" before.
+        SetDataType(typeof(byte[]), DataType.Binary);
     }
 }
