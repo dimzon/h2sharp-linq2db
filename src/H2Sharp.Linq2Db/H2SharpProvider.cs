@@ -65,14 +65,6 @@ public class H2SharpProvider : DataProviderBase
             RowFeature.Equality | RowFeature.Comparisons | RowFeature.CompareToSelect |
             RowFeature.In | RowFeature.IsNull | RowFeature.Update | RowFeature.UpdateLiteral |
             RowFeature.Overlaps | RowFeature.Between;
-
-        // H2 2.5 takes the count of a LIMIT and of an OFFSET as an expression, and the reference
-        // reads a parameter there as well. The port reads the count as an expression too, but it
-        // can only fold a literal: a parameter it cannot read is a count it cannot hold. The
-        // provider therefore writes the count as a literal, which the port reads and which means
-        // the same thing.
-        SqlProviderFlags.AcceptsTakeAsParameter                      = false;
-        SqlProviderFlags.AcceptsTakeAsParameterIfSkip                = false;
     }
 
     /// <summary>

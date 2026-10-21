@@ -426,18 +426,16 @@ the catalogue compares every column of it with the reference and names both.
 |---|---|
 | Identifiers | always quoted, the way H2 documents it: an unquoted identifier folds to upper case and a quoted one does not |
 | Types | H2's own: `varchar`, `char`, `numeric`, `varbinary`, `uuid`, `json`, `clob`, `blob`, `timestamp`, `time`, `boolean`, `smallint`, `integer`, `bigint`, `real`, `double` |
-| Paging | `LIMIT n` / `OFFSET n`, with the number written out |
+| Paging | `LIMIT n` / `OFFSET n`, with the number as a parameter |
 | Concatenation | `CONCAT(a, b)` — the function H2 2.5 has |
 | Parameters | named `@name`, which the engine rewrites into `?` before the statement is parsed |
-| Table alias | without the `AS`: `FROM "Blogs" "b"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and this is the one the engine reads |
+| Table alias | without the `AS`: `FROM "Blogs" "b"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and the bare one is the shorter |
 
 The capabilities the provider declares are H2 2.5's, not the engine's current ones: a provider
 that declared the engine's abilities would be describing a database that does not exist.
 
 Two things to know when a query does not do what it should:
 
-* The engine reads the number of a `LIMIT` only when it is written out, so the provider writes it
-  out: `LIMIT 3` and not `LIMIT @p`. The number is the same either way.
 * The engine has no `SCOPE_IDENTITY()`, `IDENTITY()` or `LAST_INSERT_ID()` — H2 2.5 has
   neither, and no `RETURNING` either. The value of a generated key comes back through
   `FINAL TABLE`, which is the form the H2 grammar has for it:
@@ -464,7 +462,6 @@ as it stands. The things that wait for the engine:
    | `CURRENT_TIMESTAMP` | `Not ported yet: ExpressionColumn.GetValue: no resolver is set on this expression` |
    | `= ANY` with a list | `Not ported yet: Parser.parseQuerySelect: aggregate calls outside the select list are not ported` |
    | `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
-   | a derived table | linq2db puts the raw SQL of `FromSql` into a derived table, and the port does not read one: `Table "(" not found` |
    | `DB_CLOSE_DELAY` and a file database | `Not ported yet: Engine.openSession: persistent databases need the file store` — the store itself is in the port and its format is compatible with H2 2.5, but a session does not open a file database; and a pooled connection takes the database with it |
 
 The full list, with what each of them costs, is in

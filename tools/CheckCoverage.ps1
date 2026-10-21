@@ -19,9 +19,10 @@
 
 .PARAMETER Threshold
     The least line rate the provider may have. The run fails when the merged report is
-    below it. The threshold is set by the first measurement of the merged report and only
+    below it. The threshold is set by the measurement of the merged report and only
     goes up: it is 0.56, and the measurement it was taken from was 0.5700 — the coverage
-    of the provider measured by the ModelTests alone. The threshold is written down
+    of the provider measured by the ModelTests alone. The later measurement is 0.5689, and
+    the threshold written down rounded down is the same 0.56. The threshold is written down
     rounded down, so that the number it was taken from passes it.
 
 .PARAMETER Report

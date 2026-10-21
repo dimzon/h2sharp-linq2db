@@ -36,13 +36,10 @@ public class H2SharpCreateTableTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void A_row_goes_into_a_table_of_H2_types_and_comes_back_out_of_it()
     {
         using var db = H2SharpDatabase.Open(nameof(A_row_goes_into_a_table_of_H2_types_and_comes_back_out_of_it));
 
-        // The provider asks for the first row with a limit that carries a number, and H2 2.5 takes
-        // a number in a limit. The port wants the number to be written out.
         db.Execute("""
             CREATE TABLE "CreatedRows" (
                 "Id" integer NOT NULL,

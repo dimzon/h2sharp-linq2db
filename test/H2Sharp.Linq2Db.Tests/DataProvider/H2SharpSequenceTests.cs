@@ -33,10 +33,6 @@ public class H2SharpSequenceTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
-    // The engine reads the sequences now, but it wants the number of a LIMIT written
-    // out, and linq2db puts it into a parameter: "LIMIT/OFFSET takes an integer literal
-    // here". The failure is the port's, not the provider's: see docs/DIVERGENCES.md.
     public void A_number_comes_from_the_sequence()
     {
         using var db = H2SharpDatabase.Open(nameof(A_number_comes_from_the_sequence));

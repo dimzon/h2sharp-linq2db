@@ -30,10 +30,6 @@ public class H2SharpRangeTests
         public long X { get; set; }
     }
 
-    [Trait("Category", "BlockedByPort")]
-    // linq2db puts the raw SQL into a derived table, and the engine does not read a derived
-    // table: "Table ""("" not found". The failure is the port's, not the provider's: see
-    // docs/DIVERGENCES.md.
     [Fact]
     public void The_range_table_gives_a_row_per_number()
     {

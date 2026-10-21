@@ -171,7 +171,6 @@ public class ForumSetQueryTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_rows_are_asked_for_with_a_group_and_an_order()
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_with_a_group_and_an_order));

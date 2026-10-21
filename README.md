@@ -52,7 +52,7 @@ catalogue, the SQL the provider generates, and what does not work yet.
 | Paging | `LIMIT n` / `OFFSET n` |
 | Concatenation | `CONCAT(a, b)` — the function H2 2.5 has |
 | Parameters | named `@name`, which the engine rewrites into `?` before the statement is parsed |
-| Table alias | without the `AS`: `FROM "Rows" "r"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and this is the one the engine reads |
+| Table alias | without the `AS`: `FROM "Rows" "r"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and the bare one is the shorter |
 
 The capabilities the provider declares are H2 2.5's, not the engine's current ones: a provider that
 declared the engine's abilities would be describing a database that does not exist.

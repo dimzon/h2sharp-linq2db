@@ -48,7 +48,6 @@ public class ForumPortGapTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_rows_are_asked_for_through_a_table_of_their_own()
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_through_a_table_of_their_own));
