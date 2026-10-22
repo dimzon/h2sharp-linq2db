@@ -33,8 +33,8 @@
 обратно (через `FINAL TABLE`), последовательности, `AS` у псевдонима таблицы и производную
 таблицу.
 
-Набор `ModelTests` (`test/H2Sharp.Linq2Db.ModelTests`): **107 зелёных, 6 красных** — все шесть
-помечены `BlockedByPort`, и все шесть — формы, которые эталон H2 2.5 принимает, а порт пока
+Набор `ModelTests` (`test/H2Sharp.Linq2Db.ModelTests`): **108 зелёных, 5 красных** — все пять
+помечены `BlockedByPort`, и все пять — формы, которые эталон H2 2.5 принимает, а порт пока
 не читает.
 
 ## Что было сломано и как починено
@@ -56,7 +56,7 @@
 | Чего нет | Симптом | Это |
 |---|---|---|
 | `INFORMATION_SCHEMA` | **читается** (коммит движка `17708ad`): каталог порта отдаёт таблицы, колонки, ключи и ссылки, и провайдер читает их тремя отдельными вопросами, без `JOIN` | — |
-| каталог отличается от эталонного | имя каталога — путь базы в URL (`mem:db`), а у H2 2.5 — имя базы; `collation` колонки пуст, а у эталона — collation базы | дефект порта |
+| колонка каталога без коллации | `collation` колонки пуст, а у эталона — collation базы; имя каталога теперь теперь имя базы (коммит движка `87a218a`) | дефект порта |
 | `DB_CLOSE_DELAY` и файловая база | `Not ported yet: Engine.openSession: persistent databases need the file store` — само хранилище в порте есть и формат его совместим с H2 2.5 (проверяет `MvStoreFileCompatTests`), но сессия не открывает файловую базу; и соединение из пула уносит базу с собой | дефект порта |
 | каталог движка из ADO-слоя | `H2Connection.Session` — `internal`, а `Schema.GetAllTablesAndViews` требует `SessionLocal` | дефект порта |
 | `JOIN` | `FROM T3 a [*]LEFT JOIN T3 b` — ожидалось `statement` | дефект порта |
@@ -83,7 +83,7 @@
 | `DB_CLOSE_DELAY` и файловая база | `Not ported yet: Engine.openSession: persistent databases need the file store` — само хранилище в порте есть и формат его совместим с H2 2.5 (проверяет `MvStoreFileCompatTests`), но сессия не открывает файловую базу; и соединение из пула уносит базу с собой | дефект порта |
 | `EXISTS` | `Not ported yet: Parser.readTerm: the keyword function EXISTS is not ported` — эталон `EXISTS` принимает | дефект порта |
 | трубы `\|\|` | `SELECT 'a' [*]\|\| 'b'` — ожидалось `statement`; эталон отвечает `ab` | дефект порта |
-| `CURRENT_TIMESTAMP` | `Not ported yet: ExpressionColumn.GetValue: no resolver is set on this expression`; эталон отвечает моментом | дефект порта |
+| `CURRENT_TIMESTAMP` | **читается** (коммит движка `f724a3c`): движок читает `CURRENT_DATE`, `CURRENT_TIME`, `LOCALTIME`, `CURRENT_TIMESTAMP` и `LOCALTIMESTAMP` (а также `CURDATE`, `CURTIME` и `NOW`) | — |
 | `= ANY` со списком | `Not ported yet: Parser.parseQuerySelect: aggregate calls outside the select list are not ported`; эталон `= ANY(ARRAY[1,2,3])` принимает | дефект порта |
 
 ## Что схемный провайдер делает и почему
@@ -256,11 +256,12 @@
 | Прогон | Прошло | Упало | Всего |
 |---|---:|---:|---:|
 | `Category!=BlockedByPort` | 107 | 0 | 107 |
-| `Category=BlockedByPort` | 0 | 6 | 6 |
+| `Category=BlockedByPort` | 1 | 5 | 6 |
 
-Шесть красных — шесть форм, которые эталон H2 2.5 принимает, а порт пока не читает:
-`EXISTS`, трубы `||`, `CURRENT_TIMESTAMP`, `= ANY` со списком и два запроса, которые linq2db
-пишет через `EXISTS`. Все шесть перечислены в таблице пробелов порта выше.
+Пять красных — пять форм, которые эталон H2 2.5 принимает, а порт пока не читает:
+`EXISTS`, трубы `||`, `= ANY` со списком и два запроса, которые linq2db пишет через `EXISTS`.
+Все пять перечислены в таблице пробелов порта выше. Шестым был `CURRENT_TIMESTAMP`, но движок
+теперь его читает (коммит `f724a3c`), и тест стал зелёным.
 
 Покрытие провайдера, измеренное этим набором: **450 из 791 строк (56,89 %)**. Порог держит
 `tools/CheckCoverage.ps1`.
