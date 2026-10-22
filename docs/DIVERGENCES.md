@@ -59,7 +59,7 @@
 | колонка каталога без коллации | `collation` колонки пуст, а у эталона — collation базы; имя каталога теперь теперь имя базы (коммит движка `87a218a`) | дефект порта |
 | `DB_CLOSE_DELAY` и файловая база | `Not ported yet: Engine.openSession: persistent databases need the file store` — само хранилище в порте есть и формат его совместим с H2 2.5 (проверяет `MvStoreFileCompatTests`), но сессия не открывает файловую базу; и соединение из пула уносит базу с собой | дефект порта |
 | каталог движка из ADO-слоя | `H2Connection.Session` — `internal`, а `Schema.GetAllTablesAndViews` требует `SessionLocal` | дефект порта |
-| `JOIN` | `FROM T3 a [*]LEFT JOIN T3 b` — ожидалось `statement` | дефект порта |
+| `JOIN` | **читается** (коммит движка `49bccfc` «The join reads two tables as one»): `INNER`, `JOIN`, `LEFT`/`RIGHT [OUTER]`, `CROSS`, `NATURAL`, с условием `ON` и списком `USING` | — |
 | соединение в любой форме | ни запятое соединение (`FROM T t, SYSTEM_RANGE(1, 3) r`), ни `CROSS JOIN`, ни `JOIN … ON` не читаются: `ожидалось "statement"` | дефект порта |
 | производная таблица | **читается** (движок перенёс производные таблицы): `FROM (SELECT …) "t1"` принимается | — |
 | `AS` перед алиасом таблицы | **читается** (движок перенёс `AS` у псевдонима): `SELECT a.Id FROM T3 AS a` принимается | — |
