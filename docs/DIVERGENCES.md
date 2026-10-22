@@ -198,6 +198,13 @@
 | сгенерированный ключ приходит через ADO-канал generated keys | документация: «FINAL TABLE» и «retrieval of generated keys» |
 | `DOUBLE` и `DOUBLE PRECISION` — один и тот же тип | порт: `"DOUBLE PRECISION", "DOUBLE", "FLOAT8"`; jar: оба принимаются |
 | `VARCHAR`, `CHAR`, `NUMERIC`, `VARBINARY`, `UUID`, `JSON`, `CLOB`, `BLOB`, `TIMESTAMP`, `TIME`, `BOOLEAN`, `SMALLINT`, `INTEGER`, `BIGINT`, `REAL` принимаются | jar на JVM: все приняты |
+| у H2 2.5 нет ни `CREATE COLLATION`, ни `COLLATE` у столбца, ни `COLLATE` в выражении | jar на JVM: `CREATE COLLATION` — ошибка, `COLLATE "x"` у столбца — ошибка; эталон читает `COLLATE` только в режиме совместимости, а коллация базы задаётся `SET COLLATION` и только именами из набора compare-mode |
+| у H2 2.5 нет полнотекстового поиска: нет типа `tsvector`, нет `tsquery`, нет `to_tsvector` | jar на JVM: тип `tsvector` не найден, функция `to_tsvector` не найдена; индекса GIN/GIST у H2 2.5 нет вовсе |
+
+Провайдер ничего из этого и не предлагает: коллации и полнотекстовый поиск в linq2db
+не выражены, поэтому и снимать нечего. Провайдер EF Core (`dimzon/h2sharp-efcore`) эти
+возможности из своего API убрал — там они были унаследованы от форка Npgsql, и H2 2.5 их
+не имеет.
 
 ## Что из тестов PostgreSQL перенести нельзя
 
