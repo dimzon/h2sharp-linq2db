@@ -24,12 +24,12 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(A_row_is_changed));
 
-        Topic topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        Topic topic = db.Topics().OrderBy(t => t.Id).First();
         topic.ViewCount = 4242;
 
         db.Update(topic);
 
-        int views = db.GetTable<Topic>().Where(t => t.Id == topic.Id).Select(t => t.ViewCount).First();
+        int views = db.Topics().Where(t => t.Id == topic.Id).Select(t => t.ViewCount).First();
         Assert.Equal(4242, views);
     }
 
@@ -38,12 +38,12 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(A_row_is_changed_by_its_key));
 
-        Topic topic = db.GetTable<Topic>().Single(t => t.Title == "Types without a runtime");
+        Topic topic = db.Topics().Single(t => t.Title == "Types without a runtime");
         topic.ViewCount = 1;
 
         db.Update(topic);
 
-        int views = db.GetTable<Topic>().Where(t => t.Id == topic.Id).Select(t => t.ViewCount).First();
+        int views = db.Topics().Where(t => t.Id == topic.Id).Select(t => t.ViewCount).First();
         Assert.Equal(1, views);
     }
 
@@ -52,12 +52,12 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(A_text_is_changed));
 
-        Topic topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        Topic topic = db.Topics().OrderBy(t => t.Id).First();
         topic.Title = "What a compiler does with the source, revised";
 
         db.Update(topic);
 
-        string title = db.GetTable<Topic>().Where(t => t.Id == topic.Id).Select(t => t.Title).First();
+        string title = db.Topics().Where(t => t.Id == topic.Id).Select(t => t.Title).First();
         Assert.Equal("What a compiler does with the source, revised", title);
     }
 
@@ -66,12 +66,12 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(The_name_of_a_person_is_changed));
 
-        User user = db.GetTable<User>().Single(u => u.UserName == "linus");
+        User user = db.Users().Single(u => u.UserName == "linus");
         user.UserName = "linus-t";
 
         db.Update(user);
 
-        Assert.Equal("linus-t", db.GetTable<User>().Single(u => u.Id == user.Id).UserName);
+        Assert.Equal("linus-t", db.Users().Single(u => u.Id == user.Id).UserName);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(Many_rows_are_changed));
 
-        List<Topic> topics = db.GetTable<Topic>().Where(t => t.ForumId == 1).ToList();
+        List<Topic> topics = db.Topics().Where(t => t.ForumId == 1).ToList();
 
         foreach (Topic topic in topics)
         {
@@ -87,7 +87,7 @@ public class ForumUpdateTests
             db.Update(topic);
         }
 
-        int changed = db.GetTable<Topic>().Count(t => t.ViewCount == 0);
+        int changed = db.Topics().Count(t => t.ViewCount == 0);
 
         Assert.Equal(3, changed);
     }
@@ -97,12 +97,12 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(A_row_is_thrown_away));
 
-        Topic topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        Topic topic = db.Topics().OrderBy(t => t.Id).First();
 
         db.Delete(topic);
 
-        Assert.Equal(6, db.GetTable<Topic>().Count());
-        Assert.Equal(0, db.GetTable<Topic>().Count(t => t.Id == topic.Id));
+        Assert.Equal(6, db.Topics().Count());
+        Assert.Equal(0, db.Topics().Count(t => t.Id == topic.Id));
     }
 
     [Fact]
@@ -110,9 +110,9 @@ public class ForumUpdateTests
     {
         using var db = ForumDatabase.Filled(nameof(Many_rows_are_thrown_away));
 
-        db.GetTable<Post>().Where(p => p.TopicId == 1).Delete();
+        db.Posts().Where(p => p.TopicId == 1).Delete();
 
-        Assert.Equal(10, db.GetTable<Post>().Count());
+        Assert.Equal(10, db.Posts().Count());
     }
 
     [Fact]
@@ -124,8 +124,8 @@ public class ForumUpdateTests
 
         int key = Convert.ToInt32(db.InsertWithIdentity(tag));
 
-        Assert.Equal(5, db.GetTable<Tag>().Count());
-        Assert.Equal("port", db.GetTable<Tag>().Single(t => t.Id == key).Name);
+        Assert.Equal(5, db.Tags().Count());
+        Assert.Equal("port", db.Tags().Single(t => t.Id == key).Name);
     }
 
     [Fact]
@@ -137,8 +137,8 @@ public class ForumUpdateTests
 
         db.Insert(profile);
 
-        Assert.Equal(99, db.GetTable<UserProfile>().Single(p => p.UserId == 99).UserId);
-        Assert.Equal(6, db.GetTable<UserProfile>().Count());
+        Assert.Equal(99, db.UserProfiles().Single(p => p.UserId == 99).UserId);
+        Assert.Equal(6, db.UserProfiles().Count());
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class ForumUpdateTests
         db.Insert(new Tag { Name = "two" });
         db.Insert(new Tag { Name = "three" });
 
-        Assert.Equal(3, db.GetTable<Tag>().Count());
-        Assert.Equal(["one", "three", "two"], db.GetTable<Tag>().Select(t => t.Name).OrderBy(n => n).ToList());
+        Assert.Equal(3, db.Tags().Count());
+        Assert.Equal(["one", "three", "two"], db.Tags().Select(t => t.Name).OrderBy(n => n).ToList());
     }
 }

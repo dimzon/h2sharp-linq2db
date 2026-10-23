@@ -32,5 +32,11 @@ public class H2FunctionAttribute : Sql.FunctionAttribute
         : base(name)
     {
         ServerSideOnly = true;
+
+        // H2 functions take values, not types: the generic arguments of the method
+        // (the T of an array function) must not be written into the statement --
+        // linq2db appends them as SqlDataType parameters by default, and H2 refuses
+        // a call with a type where a value should stand.
+        IgnoreGenericParameters = true;
     }
 }

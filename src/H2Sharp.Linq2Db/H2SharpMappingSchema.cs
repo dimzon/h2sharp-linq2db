@@ -53,5 +53,9 @@ public class H2SharpMappingSchema : MappingSchema
         // bytes in a VARBINARY column, and the array of small integers is a different thing
         // altogether. The column of a byte array was created as "smallint ARRAY" before.
         SetDataType(typeof(byte[]), DataType.Binary);
+
+        // The engine hands a TIME value over as a TimeSpan, and the model holds a TimeOnly:
+        // without the conversion the row cannot be read back.
+        SetConvertExpression<TimeSpan, TimeOnly>(span => TimeOnly.FromTimeSpan(span));
     }
 }

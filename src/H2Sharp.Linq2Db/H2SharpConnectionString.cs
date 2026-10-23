@@ -42,14 +42,19 @@ public static class H2SharpConnectionString
         var builder = new H2ConnectionStringBuilder(connectionString);
         var url = builder.ToH2ConnectionString();
 
-        // Whatever is not the database name is a setting, and a setting belongs on the URL.
+        // Whatever is not the database name is a setting, and a setting belongs on
+        // the URL. The name, the user and the password are already in the URL the
+        // builder made, so they are not settings here (the engine reads the same
+        // three names the same way when it opens the connection).
         var settings = new List<string>();
 
         foreach (var key in builder.Keys)
         {
             var name = key.ToString() ?? string.Empty;
 
-            if (!string.Equals(name, "Data Source", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(name, "Data Source", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(name, "User ID", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(name, "Password", StringComparison.OrdinalIgnoreCase))
             {
                 settings.Add($"{name}={builder[name]?.ToString()}");
             }

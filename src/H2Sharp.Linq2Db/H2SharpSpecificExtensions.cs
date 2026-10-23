@@ -299,6 +299,16 @@ public static class H2SharpSpecificExtensions
         [ExprParameter("rest")] params string[] rest)
         => throw new ServerSideOnlyException(nameof(ConcatWithSeparator));
 
+    /// <summary>
+    ///     Two texts put together with a text between them: <c>CONCAT_WS(separator, first, second)</c>.
+    /// </summary>
+    [Sql.Extension("CONCAT_WS({separator}, {first}, {second})")]
+    public static string ConcatWithSeparator(
+        [ExprParameter("separator")] string separator,
+        [ExprParameter("first")] string first,
+        [ExprParameter("second")] string second)
+        => throw new ServerSideOnlyException(nameof(ConcatWithSeparator));
+
     #endregion
 
     #region Numbers

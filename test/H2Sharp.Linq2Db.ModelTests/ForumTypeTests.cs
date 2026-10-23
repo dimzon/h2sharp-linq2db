@@ -35,21 +35,21 @@ public class ForumTypeTests
     }
 
     [Fact]
-    public void The_enum_is_stored_as_a_string()
+    public void The_enum_is_stored_as_a_number()
     {
-        using var db = ForumDatabase.Filled(nameof(The_enum_is_stored_as_a_string));
+        using var db = ForumDatabase.Filled(nameof(The_enum_is_stored_as_a_number));
 
-        User user = db.GetTable<User>().Single(u => u.UserName == "ada");
+        User user = db.Users().Single(u => u.UserName == "ada");
 
         Assert.Equal(UserRole.Administrator, user.Role);
     }
 
     [Fact]
-    public void The_enum_is_stored_as_a_string_and_not_as_a_number()
+    public void The_enum_is_stored_as_a_number_and_not_as_a_string()
     {
-        using var db = ForumDatabase.Filled(nameof(The_enum_is_stored_as_a_string_and_not_as_a_number));
+        using var db = ForumDatabase.Filled(nameof(The_enum_is_stored_as_a_number_and_not_as_a_string));
 
-        List<UserRole> roles = db.GetTable<User>()
+        List<UserRole> roles = db.Users()
             .OrderBy(u => u.Id)
             .Select(u => u.Role)
             .ToList();
@@ -70,9 +70,40 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_enum_is_asked_for_by_its_name));
 
-        int moderators = db.GetTable<User>().Count(u => u.Role == UserRole.Moderator);
+        int moderators = db.Users().Count(u => u.Role == UserRole.Moderator);
 
         Assert.Equal(1, moderators);
+    }
+
+    [Fact]
+    public void The_users_are_asked_for_by_their_roles()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_users_are_asked_for_by_their_roles));
+
+        List<string> names = db.Users()
+            .Where(u => new[] { UserRole.Administrator, UserRole.Moderator }.Contains(u.Role))
+            .OrderBy(u => u.Id)
+            .Select(u => u.UserName)
+            .ToList();
+
+        Assert.Equal(["ada", "grace"], names);
+    }
+
+    [Fact]
+    public void The_users_are_ordered_by_their_role()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_users_are_ordered_by_their_role));
+
+        List<UserRole> roles = db.Users()
+            .OrderBy(u => u.Role)
+            .Select(u => u.Role)
+            .ToList();
+
+        // The column holds the numeric value, and the engine orders numbers:
+        // the same order .NET gives the enum itself.
+        Assert.Equal(
+            [UserRole.Guest, UserRole.Member, UserRole.Member, UserRole.Moderator, UserRole.Administrator],
+            roles);
     }
 
     [Fact]
@@ -80,7 +111,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_decimal_keeps_its_places));
 
-        UserProfile profile = db.GetTable<UserProfile>().Single(p => p.Balance == 12.50m);
+        UserProfile profile = db.UserProfiles().Single(p => p.Balance == 12.50m);
 
         Assert.Equal(12.50m, profile.Balance);
     }
@@ -90,7 +121,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_sum_of_the_decimals_keeps_its_places));
 
-        decimal sum = db.GetTable<UserProfile>().Sum(p => p.Balance);
+        decimal sum = db.UserProfiles().Sum(p => p.Balance);
 
         Assert.Equal(23.50m, sum);
     }
@@ -100,7 +131,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_date_comes_back_as_it_went_in));
 
-        Topic topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        Topic topic = db.Topics().OrderBy(t => t.Id).First();
 
         Assert.Equal(new DateTime(2024, 1, 11, 9, 0, 0), topic.CreatedAt);
     }
@@ -110,7 +141,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_date_with_an_hour_comes_back_as_it_went_in));
 
-        Post post = db.GetTable<Post>().OrderBy(p => p.Id).First();
+        Post post = db.Posts().OrderBy(p => p.Id).First();
 
         Assert.Equal(new DateTime(2024, 1, 11, 10, 0, 0), post.CreatedAt);
     }
@@ -120,10 +151,10 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_empty_date_comes_back_as_nothing));
 
-        UserProfile profile = db.GetTable<UserProfile>().Single(p => p.Reputation == 250);
+        UserProfile profile = db.UserProfiles().Single(p => p.Reputation == 250);
 
         Assert.Null(profile.BirthDate);
-        Assert.Equal(2, db.GetTable<UserProfile>().Count(p => p.BirthDate == null));
+        Assert.Equal(2, db.UserProfiles().Count(p => p.BirthDate == null));
     }
 
     [Fact]
@@ -131,9 +162,9 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_boolean_comes_back_as_it_went_in));
 
-        Topic topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        Topic topic = db.Topics().OrderBy(t => t.Id).First();
 
-        Assert.True(db.GetTable<TopicState>().Single(s => s.TopicId == topic.Id).IsPinned);
+        Assert.True(db.TopicStates().Single(s => s.TopicId == topic.Id).IsPinned);
     }
 
     [Fact]
@@ -141,7 +172,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_bytes_come_back_as_they_went_in));
 
-        UserProfile profile = db.GetTable<UserProfile>().Single(p => p.Reputation == 420);
+        UserProfile profile = db.UserProfiles().Single(p => p.Reputation == 420);
 
         Assert.Equal<byte[]>([1, 2, 3], profile.Avatar);
     }
@@ -151,7 +182,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_empty_bytes_come_back_as_they_went_in));
 
-        UserProfile profile = db.GetTable<UserProfile>().Single(p => p.Reputation == 380);
+        UserProfile profile = db.UserProfiles().Single(p => p.Reputation == 380);
 
         Assert.Empty(profile.Avatar);
     }
@@ -161,7 +192,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_text_keeps_its_length));
 
-        User user = db.GetTable<User>().Single(u => u.UserName == "margaret");
+        User user = db.Users().Single(u => u.UserName == "margaret");
 
         Assert.Equal("margaret", user.UserName);
         Assert.Equal("margaret@example.org", user.Email);
@@ -172,7 +203,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_text_is_asked_for_by_its_length));
 
-        int names = db.GetTable<User>().Count(u => u.UserName.Length == 8);
+        int names = db.Users().Count(u => u.UserName.Length == 8);
 
         Assert.Equal(1, names);
     }
@@ -182,7 +213,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_number_comes_back_as_it_went_in));
 
-        Topic topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        Topic topic = db.Topics().OrderBy(t => t.Id).First();
 
         Assert.Equal(1200, topic.ViewCount);
     }
@@ -192,7 +223,7 @@ public class ForumTypeTests
     {
         using var db = ForumDatabase.Filled(nameof(The_number_is_asked_for_by_its_size));
 
-        int topics = db.GetTable<Topic>().Count(t => t.ViewCount > 1000);
+        int topics = db.Topics().Count(t => t.ViewCount > 1000);
 
         Assert.Equal(1, topics);
     }

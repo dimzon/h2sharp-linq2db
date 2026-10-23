@@ -42,7 +42,7 @@ public class ForumSqlQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_with_a_statement_and_a_parameter));
 
-        int forumId = db.GetTable<Forum>().Single(f => f.Name == "Databases").Id;
+        int forumId = db.Forums().Single(f => f.Name == "Databases").Id;
 
         List<string> titles = db.Query<Topic>(
                 """

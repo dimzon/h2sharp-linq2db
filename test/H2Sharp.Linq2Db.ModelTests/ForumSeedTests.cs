@@ -48,15 +48,15 @@ public class ForumSeedTests
     {
         using var db = ForumDatabase.Filled(nameof(The_forum_is_in_the_database));
 
-        Assert.Equal(3, db.GetTable<Forum>().Count());
-        Assert.Equal(5, db.GetTable<User>().Count());
-        Assert.Equal(5, db.GetTable<UserProfile>().Count());
-        Assert.Equal(7, db.GetTable<Topic>().Count());
-        Assert.Equal(7, db.GetTable<TopicState>().Count());
-        Assert.Equal(14, db.GetTable<Post>().Count());
-        Assert.Equal(4, db.GetTable<Tag>().Count());
-        Assert.Equal(7, db.GetTable<TopicTag>().Count());
-        Assert.Equal(5, db.GetTable<Vote>().Count());
+        Assert.Equal(3, db.Forums().Count());
+        Assert.Equal(5, db.Users().Count());
+        Assert.Equal(5, db.UserProfiles().Count());
+        Assert.Equal(7, db.Topics().Count());
+        Assert.Equal(7, db.TopicStates().Count());
+        Assert.Equal(14, db.Posts().Count());
+        Assert.Equal(4, db.Tags().Count());
+        Assert.Equal(7, db.TopicTags().Count());
+        Assert.Equal(5, db.Votes().Count());
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class ForumSeedTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_keep_what_the_seed_put_in_them));
 
-        var topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        var topic = db.Topics().OrderBy(t => t.Id).First();
 
         Assert.Equal("What a compiler does with the source", topic.Title);
         Assert.Equal(1200, topic.ViewCount);
@@ -75,7 +75,7 @@ public class ForumSeedTests
     {
         using var db = ForumDatabase.Filled(nameof(The_key_of_a_row_comes_back_from_the_database));
 
-        var topic = db.GetTable<Topic>().OrderBy(t => t.Id).First();
+        var topic = db.Topics().OrderBy(t => t.Id).First();
 
         Assert.True(topic.Id > 0);
     }

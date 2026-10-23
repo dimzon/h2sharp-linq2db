@@ -595,9 +595,10 @@ public class H2SharpSchemaProvider : ISchemaProvider
         => dataType?.ToUpperInvariant() switch
         {
             "CHARACTER VARYING" or "VARCHAR" or "VARCHAR_IGNORECASE" => DataType.NVarChar,
-            "CHARACTER"                                         => DataType.Char,
-            "CHARACTER LARGE OBJECT"                            => DataType.Text,
-            "BINARY VARYING"                                    => DataType.VarBinary,
+            "CHARACTER" or "CHAR" => DataType.Char,
+            "CHARACTER LARGE OBJECT" or "CLOB" => DataType.Text,
+            "BINARY" => DataType.Binary,
+            "BINARY VARYING" or "VARBINARY" => DataType.VarBinary,
             "BINARY LARGE OBJECT"                               => DataType.Blob,
             "BOOLEAN"                                           => DataType.Boolean,
             "TINYINT"                                           => DataType.SByte,

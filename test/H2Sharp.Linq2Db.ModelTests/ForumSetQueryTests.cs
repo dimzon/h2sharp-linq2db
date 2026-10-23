@@ -5,6 +5,7 @@
 using H2Sharp.Linq2Db.ModelTests.Model;
 
 using LinqToDB;
+using LinqToDB.DataProvider.H2Sharp;
 
 using Xunit;
 
@@ -24,7 +25,7 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_answers_of_every_topic_are_counted));
 
-        List<int> counts = (from post in db.GetTable<Post>()
+        List<int> counts = (from post in db.Posts()
                              group post by post.TopicId into answers
                              orderby answers.Key
                              select answers.Count()).ToList();
@@ -33,11 +34,43 @@ public class ForumSetQueryTests
     }
 
     [Fact]
+    public void The_newest_topics_come_from_a_common_table()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_newest_topics_come_from_a_common_table));
+
+        var newest = db.Topics().OrderByDescending(t => t.Id).Take(3).AsCte("Newest");
+        List<string> titles = (from t in newest orderby t.Id select t.Title).ToList();
+
+        Assert.Equal(
+        [
+            "Indexes that are never used",
+            "Transactions and the order of the writes",
+            "The forum moves",
+        ],
+        titles);
+    }
+
+    [Fact]
+    public void A_join_per_row_is_refused_without_lateral()
+    {
+        using var db = ForumDatabase.Filled(nameof(A_join_per_row_is_refused_without_lateral));
+
+        // H2 2.5 has no LATERAL and no CROSS APPLY: the argument of a table function
+        // cannot depend on the row of an outer query.
+        var refused = Assert.Throws<NotSupportedException>(
+            () => db.Topics()
+                .SelectMany(t => db.SystemRange(1, t.ViewCount))
+                .ToList());
+
+        Assert.Contains("LATERAL", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_topics_of_every_forum_are_counted()
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_of_every_forum_are_counted));
 
-        List<int> counts = (from topic in db.GetTable<Topic>()
+        List<int> counts = (from topic in db.Topics()
                              group topic by topic.ForumId into topics
                              orderby topics.Key
                              select topics.Count()).ToList();
@@ -50,7 +83,7 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_views_of_the_topics_of_every_forum_are_summed_up));
 
-        List<int> sums = (from topic in db.GetTable<Topic>()
+        List<int> sums = (from topic in db.Topics()
                            group topic by topic.ForumId into topics
                            orderby topics.Key
                            select topics.Sum(t => t.ViewCount)).ToList();
@@ -63,8 +96,8 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_names_of_the_authors_are_taken_once));
 
-        List<string> names = (from post in db.GetTable<Post>()
-                              join user in db.GetTable<User>() on post.AuthorId equals user.Id
+        List<string> names = (from post in db.Posts()
+                              join user in db.Users() on post.AuthorId equals user.Id
                               group post by user.UserName into posts
                               orderby posts.Key
                               select posts.Key).ToList();
@@ -77,7 +110,7 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_number_of_the_answers_of_every_author_is_counted));
 
-        List<int> counts = (from post in db.GetTable<Post>()
+        List<int> counts = (from post in db.Posts()
                              group post by post.AuthorId into posts
                              orderby posts.Key
                              select posts.Count()).ToList();
@@ -90,7 +123,7 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_most_watched_topic_of_every_forum_is_asked_for));
 
-        List<int> views = (from topic in db.GetTable<Topic>()
+        List<int> views = (from topic in db.Topics()
                            group topic by topic.ForumId into topics
                            orderby topics.Key
                            select topics.Max(t => t.ViewCount)).ToList();
@@ -103,8 +136,8 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_answers_are_counted_with_the_name_of_the_author));
 
-        List<int> counts = (from post in db.GetTable<Post>()
-                             join user in db.GetTable<User>() on post.AuthorId equals user.Id
+        List<int> counts = (from post in db.Posts()
+                             join user in db.Users() on post.AuthorId equals user.Id
                              group post by user.UserName into posts
                              orderby posts.Key
                              select posts.Count()).ToList();
@@ -117,8 +150,8 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_asked_for_with_the_number_of_their_answers));
 
-        List<int> counts = (from topic in db.GetTable<Topic>()
-                             join post in db.GetTable<Post>() on topic.Id equals post.TopicId
+        List<int> counts = (from topic in db.Topics()
+                             join post in db.Posts() on topic.Id equals post.TopicId
                              group topic by topic.Id into posts
                              orderby posts.Key
                              select posts.Count()).ToList();
@@ -131,7 +164,7 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_tags_of_every_topic_are_counted));
 
-        List<int> counts = (from topicTag in db.GetTable<TopicTag>()
+        List<int> counts = (from topicTag in db.TopicTags()
                              group topicTag by topicTag.TopicId into tags
                              orderby tags.Key
                              select tags.Count()).ToList();
@@ -144,10 +177,10 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_answers_of_a_forum_are_counted_with_a_join));
 
-        int forumId = db.GetTable<Forum>().Single(f => f.Name == "Programming").Id;
+        int forumId = db.Forums().Single(f => f.Name == "Programming").Id;
 
-        int answers = (from post in db.GetTable<Post>()
-                       join topic in db.GetTable<Topic>() on post.TopicId equals topic.Id
+        int answers = (from post in db.Posts()
+                       join topic in db.Topics() on post.TopicId equals topic.Id
                        where topic.ForumId == forumId
                        select post.Id).Count();
 
@@ -159,10 +192,10 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_of_a_forum_are_asked_for_with_a_left_join));
 
-        int forumId = db.GetTable<Forum>().Single(f => f.Name == "Old announcements").Id;
+        int forumId = db.Forums().Single(f => f.Name == "Old announcements").Id;
 
-        List<string?> titles = (from topic in db.GetTable<Topic>()
-                                 join state in db.GetTable<TopicState>() on topic.Id equals state.TopicId
+        List<string?> titles = (from topic in db.Topics()
+                                 join state in db.TopicStates() on topic.Id equals state.TopicId
                                  where topic.ForumId == forumId
                                  orderby topic.Id
                                  select state.ModeratorNote).ToList();
@@ -175,7 +208,7 @@ public class ForumSetQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_with_a_group_and_an_order));
 
-        List<(int ForumId, int Topics)> groups = (from topic in db.GetTable<Topic>()
+        List<(int ForumId, int Topics)> groups = (from topic in db.Topics()
                                                   group topic by topic.ForumId into topics
                                                   orderby topics.Count() descending
                                                   select new { ForumId = topics.Key, Topics = topics.Count() })

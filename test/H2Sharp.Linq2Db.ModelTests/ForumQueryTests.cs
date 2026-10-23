@@ -35,7 +35,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(All_the_topics_come_back));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
             .ToList();
@@ -50,9 +50,9 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(A_row_is_asked_for_by_its_key));
 
-        int id = db.GetTable<Topic>().OrderBy(t => t.Id).Select(t => t.Id).First();
+        int id = db.Topics().OrderBy(t => t.Id).Select(t => t.Id).First();
 
-        Topic topic = db.GetTable<Topic>().Single(t => t.Id == id);
+        Topic topic = db.Topics().Single(t => t.Id == id);
 
         Assert.Equal("What a compiler does with the source", topic.Title);
     }
@@ -62,9 +62,9 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_of_one_forum_are_asked_for));
 
-        int forumId = db.GetTable<Forum>().Single(f => f.Name == "Databases").Id;
+        int forumId = db.Forums().Single(f => f.Name == "Databases").Id;
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.ForumId == forumId)
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
@@ -84,7 +84,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_asked_for_by_their_name));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.Title.Contains("compiler"))
             .Select(t => t.Title)
             .ToList();
@@ -97,7 +97,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_asked_for_by_the_beginning_of_their_name));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.Title.StartsWith("The"))
             .OrderBy(t => t.Title)
             .Select(t => t.Title)
@@ -116,7 +116,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_asked_for_by_the_end_of_their_name));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.Title.EndsWith("plan"))
             .Select(t => t.Title)
             .ToList();
@@ -129,7 +129,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_ordered_by_the_number_of_the_views));
 
-        List<(string Title, int Views)> topics = db.GetTable<Topic>()
+        List<(string Title, int Views)> topics = db.Topics()
             .OrderByDescending(t => t.ViewCount)
             .Select(t => new { t.Title, t.ViewCount })
             .ToList()
@@ -147,7 +147,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_ordered_by_two_columns));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .OrderBy(t => t.ForumId)
             .ThenByDescending(t => t.ViewCount)
             .Select(t => t.Title)
@@ -171,9 +171,9 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_number_of_the_rows_is_counted));
 
-        Assert.Equal(7, db.GetTable<Topic>().Count());
-        Assert.Equal(3, db.GetTable<Topic>().Count(t => t.ForumId == 1));
-        Assert.Equal(14, db.GetTable<Post>().Count());
+        Assert.Equal(7, db.Topics().Count());
+        Assert.Equal(3, db.Topics().Count(t => t.ForumId == 1));
+        Assert.Equal(14, db.Posts().Count());
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_sum_of_the_views_is_taken));
 
-        int sum = db.GetTable<Topic>().Sum(t => t.ViewCount);
+        int sum = db.Topics().Sum(t => t.ViewCount);
 
         Assert.Equal(3680, sum);
     }
@@ -191,8 +191,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_smallest_and_the_largest_of_the_views_are_taken));
 
-        Assert.Equal(80, db.GetTable<Topic>().Min(t => t.ViewCount));
-        Assert.Equal(1200, db.GetTable<Topic>().Max(t => t.ViewCount));
+        Assert.Equal(80, db.Topics().Min(t => t.ViewCount));
+        Assert.Equal(1200, db.Topics().Max(t => t.ViewCount));
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_average_of_the_views_is_taken));
 
-        double average = db.GetTable<Topic>().Average(t => t.ViewCount);
+        double average = db.Topics().Average(t => t.ViewCount);
 
         Assert.Equal(3680d / 7d, average, 6);
     }
@@ -211,8 +211,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(It_is_asked_whether_there_is_a_row));
 
-        Assert.True(db.GetTable<Topic>().Any(t => t.ViewCount > 1000));
-        Assert.False(db.GetTable<Topic>().Any(t => t.ViewCount > 5000));
+        Assert.True(db.Topics().Any(t => t.ViewCount > 1000));
+        Assert.False(db.Topics().Any(t => t.ViewCount > 5000));
     }
 
     [Fact]
@@ -221,8 +221,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(It_is_asked_whether_every_row_says_yes));
 
-        Assert.True(db.GetTable<Topic>().All(t => t.ViewCount > 0));
-        Assert.False(db.GetTable<Topic>().All(t => t.ViewCount > 100));
+        Assert.True(db.Topics().All(t => t.ViewCount > 0));
+        Assert.False(db.Topics().All(t => t.ViewCount > 100));
     }
 
     [Fact]
@@ -230,8 +230,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_taken_one_by_one));
 
-        Topic first = db.GetTable<Topic>().OrderBy(t => t.Id).First();
-        Topic last = db.GetTable<Topic>().OrderByDescending(t => t.Id).First();
+        Topic first = db.Topics().OrderBy(t => t.Id).First();
+        Topic last = db.Topics().OrderByDescending(t => t.Id).First();
 
         Assert.Equal("What a compiler does with the source", first.Title);
         Assert.Equal("The forum moves", last.Title);
@@ -242,7 +242,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(A_page_of_the_topics_is_asked_for));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .OrderBy(t => t.Id)
             .Skip(2)
             .Take(3)
@@ -263,12 +263,12 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_by_a_list_of_keys));
 
-        List<int> ids = db.GetTable<Topic>()
+        List<int> ids = db.Topics()
             .Where(t => t.Title.Contains("The") || t.Title.Contains("Types"))
             .Select(t => t.Id)
             .ToList();
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => ids.Contains(t.Id))
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
@@ -288,7 +288,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_by_a_number_between_two));
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.ViewCount >= 150 && t.ViewCount <= 890)
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
@@ -310,14 +310,14 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_with_a_null_in_them_are_asked_for));
 
-        List<int> users = db.GetTable<User>()
+        List<int> users = db.Users()
             .Where(u => u.LastSeenAt == null)
             .Select(u => u.Id)
             .ToList();
 
         Assert.Empty(users);
 
-        List<int> withoutABirthday = db.GetTable<UserProfile>()
+        List<int> withoutABirthday = db.UserProfiles()
             .Where(p => p.BirthDate == null)
             .Select(p => p.UserId)
             .ToList();
@@ -330,7 +330,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_repeated_names_are_taken_once));
 
-        List<int> authors = db.GetTable<Post>()
+        List<int> authors = db.Posts()
             .Select(p => p.AuthorId)
             .Distinct()
             .OrderBy(id => id)
@@ -344,8 +344,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_of_a_forum_are_asked_for_with_a_join));
 
-        List<string> titles = (from topic in db.GetTable<Topic>()
-                               join forum in db.GetTable<Forum>() on topic.ForumId equals forum.Id
+        List<string> titles = (from topic in db.Topics()
+                               join forum in db.Forums() on topic.ForumId equals forum.Id
                                where forum.Name == "Databases"
                                orderby topic.Id
                                select topic.Title).ToList();
@@ -364,8 +364,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_name_of_the_author_is_asked_for_with_a_join));
 
-        List<(string Title, string Author)> topics = (from topic in db.GetTable<Topic>()
-                                                     join user in db.GetTable<User>() on topic.AuthorId equals user.Id
+        List<(string Title, string Author)> topics = (from topic in db.Topics()
+                                                     join user in db.Users() on topic.AuthorId equals user.Id
                                                      orderby topic.Id
                                                      select new { topic.Title, Author = user.UserName })
             .ToList()
@@ -382,8 +382,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_asked_for_by_the_name_of_the_author));
 
-        List<string> titles = (from topic in db.GetTable<Topic>()
-                               join user in db.GetTable<User>() on topic.AuthorId equals user.Id
+        List<string> titles = (from topic in db.Topics()
+                               join user in db.Users() on topic.AuthorId equals user.Id
                                where user.UserName == "ada"
                                orderby topic.Id
                                select topic.Title).ToList();
@@ -401,9 +401,9 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_answers_of_a_topic_are_asked_for));
 
-        int topicId = db.GetTable<Topic>().Single(t => t.Title == "Reading a query plan").Id;
+        int topicId = db.Topics().Single(t => t.Title == "Reading a query plan").Id;
 
-        List<string> bodies = db.GetTable<Post>()
+        List<string> bodies = db.Posts()
             .Where(p => p.TopicId == topicId)
             .OrderBy(p => p.Id)
             .Select(p => p.Body)
@@ -422,10 +422,10 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_tags_of_a_topic_are_asked_for_with_two_joins));
 
-        int topicId = db.GetTable<Topic>().Single(t => t.Title == "What a compiler does with the source").Id;
+        int topicId = db.Topics().Single(t => t.Title == "What a compiler does with the source").Id;
 
-        List<string> names = (from topicTag in db.GetTable<TopicTag>()
-                              join tag in db.GetTable<Tag>() on topicTag.TagId equals tag.Id
+        List<string> names = (from topicTag in db.TopicTags()
+                              join tag in db.Tags() on topicTag.TagId equals tag.Id
                               where topicTag.TopicId == topicId
                               orderby tag.Name
                               select tag.Name).ToList();
@@ -438,7 +438,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_number_of_the_answers_of_every_topic_is_counted));
 
-        List<(int TopicId, int Answers)> counts = (from post in db.GetTable<Post>()
+        List<(int TopicId, int Answers)> counts = (from post in db.Posts()
                                                    group post by post.TopicId into answers
                                                    orderby answers.Key
                                                    select new { TopicId = answers.Key, Answers = answers.Count() })
@@ -457,9 +457,9 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_of_a_forum_are_asked_for_with_a_subquery));
 
-        int forumId = db.GetTable<Forum>().Single(f => f.Name == "Programming").Id;
+        int forumId = db.Forums().Single(f => f.Name == "Programming").Id;
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.ForumId == forumId)
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
@@ -480,8 +480,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_that_have_answers_are_asked_for));
 
-        List<string> titles = db.GetTable<Topic>()
-            .Where(t => db.GetTable<Post>().Any(p => p.TopicId == t.Id))
+        List<string> titles = db.Topics()
+            .Where(t => db.Posts().Any(p => p.TopicId == t.Id))
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
             .ToList();
@@ -494,8 +494,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_state_of_a_topic_is_asked_for_with_a_join));
 
-        List<string> notes = (from topic in db.GetTable<Topic>()
-                              join state in db.GetTable<TopicState>() on topic.Id equals state.TopicId
+        List<string> notes = (from topic in db.Topics()
+                              join state in db.TopicStates() on topic.Id equals state.TopicId
                               where state.IsClosed
                               orderby topic.Id
                               select state.ModeratorNote!).ToList();
@@ -513,8 +513,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_pinned_topics_are_asked_for));
 
-        List<string> titles = (from topic in db.GetTable<Topic>()
-                               join state in db.GetTable<TopicState>() on topic.Id equals state.TopicId
+        List<string> titles = (from topic in db.Topics()
+                               join state in db.TopicStates() on topic.Id equals state.TopicId
                                where state.IsPinned
                                select topic.Title).ToList();
 
@@ -526,8 +526,8 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_people_of_the_forum_are_asked_for_with_their_profile));
 
-        List<(string Name, decimal Balance)> people = (from user in db.GetTable<User>()
-                                                       join profile in db.GetTable<UserProfile>() on user.Id equals profile.UserId
+        List<(string Name, decimal Balance)> people = (from user in db.Users()
+                                                       join profile in db.UserProfiles() on user.Id equals profile.UserId
                                                        where user.Role == UserRole.Administrator
                                                        select new { user.UserName, profile.Balance })
             .ToList()
@@ -544,9 +544,9 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_votes_of_an_answer_are_counted));
 
-        int postId = db.GetTable<Post>().Single(p => p.Body == "The tree is walked and the code is written.").Id;
+        int postId = db.Posts().Single(p => p.Body == "The tree is walked and the code is written.").Id;
 
-        int votes = db.GetTable<Vote>().Count(v => v.PostId == postId);
+        int votes = db.Votes().Count(v => v.PostId == postId);
 
         Assert.Equal(2, votes);
     }
@@ -559,7 +559,7 @@ public class ForumQueryTests
         DateTime begin = ForumData.Start.AddDays(15);
         DateTime end = ForumData.Start.AddDays(45);
 
-        List<string> titles = db.GetTable<Topic>()
+        List<string> titles = db.Topics()
             .Where(t => t.CreatedAt >= begin && t.CreatedAt < end)
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
@@ -580,7 +580,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_are_asked_for_by_the_year_of_their_creation));
 
-        int topics = db.GetTable<Topic>()
+        int topics = db.Topics()
             .Count(t => t.CreatedAt.Year == 2024);
 
         Assert.Equal(7, topics);
@@ -591,7 +591,7 @@ public class ForumQueryTests
     {
         using var db = ForumDatabase.Filled(nameof(The_text_of_a_topic_is_asked_for));
 
-        List<string> bodies = db.GetTable<Topic>()
+        List<string> bodies = db.Topics()
             .Where(t => t.Body.StartsWith("A walk"))
             .Select(t => t.Body)
             .ToList();

@@ -25,7 +25,7 @@ public class ForumAsyncTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_come_back_without_waiting));
 
-        List<string> titles = await db.GetTable<Topic>()
+        List<string> titles = await db.Topics()
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
             .ToListAsync();
@@ -39,7 +39,7 @@ public class ForumAsyncTests
     {
         using var db = ForumDatabase.Filled(nameof(The_number_of_the_rows_is_counted_without_waiting));
 
-        int count = await db.GetTable<Topic>().CountAsync();
+        int count = await db.Topics().CountAsync();
 
         Assert.Equal(7, count);
     }
@@ -49,7 +49,7 @@ public class ForumAsyncTests
     {
         using var db = ForumDatabase.Filled(nameof(The_first_row_comes_back_without_waiting));
 
-        Topic topic = await db.GetTable<Topic>().OrderBy(t => t.Id).FirstAsync();
+        Topic topic = await db.Topics().OrderBy(t => t.Id).FirstAsync();
 
         Assert.Equal("What a compiler does with the source", topic.Title);
     }
@@ -59,7 +59,7 @@ public class ForumAsyncTests
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_by_their_name_without_waiting));
 
-        List<string> titles = await db.GetTable<Topic>()
+        List<string> titles = await db.Topics()
             .Where(t => t.Title.Contains("compiler"))
             .Select(t => t.Title)
             .ToListAsync();
@@ -74,8 +74,8 @@ public class ForumAsyncTests
 
         await db.InsertAsync(new Tag { Name = "async" });
 
-        Assert.Equal(5, db.GetTable<Tag>().Count());
-        Assert.Equal("async", db.GetTable<Tag>().Single(t => t.Name == "async").Name);
+        Assert.Equal(5, db.Tags().Count());
+        Assert.Equal("async", db.Tags().Single(t => t.Name == "async").Name);
     }
 
     [Fact]
@@ -83,10 +83,10 @@ public class ForumAsyncTests
     {
         using var db = ForumDatabase.Filled(nameof(The_row_is_thrown_away_without_waiting));
 
-        Topic topic = await db.GetTable<Topic>().OrderBy(t => t.Id).FirstAsync();
+        Topic topic = await db.Topics().OrderBy(t => t.Id).FirstAsync();
 
         await db.DeleteAsync(topic);
 
-        Assert.Equal(6, db.GetTable<Topic>().Count());
+        Assert.Equal(6, db.Topics().Count());
     }
 }
