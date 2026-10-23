@@ -118,7 +118,6 @@ public class H2SharpSchemaProviderTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public async Task The_catalogue_links_a_reference_to_the_table_it_points_at()
     {
         await using var db = H2SharpDatabase.Open(nameof(The_catalogue_links_a_reference_to_the_table_it_points_at));

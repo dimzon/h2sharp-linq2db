@@ -343,8 +343,12 @@ public class H2SharpSchemaProvider : ISchemaProvider
             foreach (var column in own)
             {
                 // The position the column has in the referenced key says which column of that
-                // key it points at.
-                var referenced = target.FirstOrDefault(t => t.Position == column.InKey);
+                // key it points at. H2 leaves POSITION_IN_UNIQUE_CONSTRAINT null, so the
+                // columns are paired by their order inside the constraint instead.
+                var referenced = column.InKey > 0
+                    ? target.FirstOrDefault(t => t.Position == column.InKey)
+                    : target.OrderBy(t => t.Position).ElementAtOrDefault(
+                        own.OrderBy(o => o.Position).ToList().IndexOf(column));
 
                 if (referenced.Column is null)
                     continue;

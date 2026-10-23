@@ -85,16 +85,15 @@ public class H2SharpTableFunctionTests
             recorder.Text!.ReplaceLineEndings("\n"));
     }
 
-    [Trait("Category", "BlockedByPort")]
-    // The engine does not read a join yet -- not a comma join, not CROSS JOIN, not JOIN ... ON
-    // -- so the rows of the range table never come back. The failure is the port's, not the
-    // provider's: see docs/DIVERGENCES.md.
     [Fact]
     public void The_rows_of_the_range_table_come_back()
     {
         using var db = H2SharpDatabase.Open(nameof(The_rows_of_the_range_table_come_back));
 
         db.CreateTable<Row>();
+        db.Insert(new Row { Id = 1, Name = "a" });
+        db.Insert(new Row { Id = 2, Name = "b" });
+        db.Insert(new Row { Id = 3, Name = "c" });
 
         List<string> rows =
             (from row in db.GetTable<Row>()

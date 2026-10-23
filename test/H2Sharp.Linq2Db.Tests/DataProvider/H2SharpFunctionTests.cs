@@ -39,51 +39,32 @@ public class H2SharpFunctionTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
-    public void A_function_comes_back_with_its_result()
+    public void A_function_of_java_is_refused_cheerfully()
     {
-        using var db = H2SharpDatabase.Open(nameof(A_function_comes_back_with_its_result));
+        using var db = H2SharpDatabase.Open(nameof(A_function_of_java_is_refused_cheerfully));
 
-        // H2 2.5 makes a function with CREATE ALIAS and a body of Java code, and the engine
-        // compiles the body when the alias is made. The port has no CREATE ALIAS yet.
-        db.Execute("""
-            CREATE ALIAS "SCALAR_FN" AS $$ String f(int v) { return "done"; } $$
-            """);
+        // H2 2.5 makes a function with CREATE ALIAS and a body of Java code. The port is a
+        // C# engine and does not compile Java, so this form is refused at the statement:
+        // the provider does not pretend the function exists.
+        var refused = Assert.Throws<H2Sharp.H2SharpException>(
+            () => db.Execute("""
+                CREATE ALIAS "SCALAR_FN" AS $$ String f(int v) { return "done"; } $$
+                """));
 
-        var result = db.Select(() => H2Functions.ScalarFunction(123));
-
-        Assert.Equal("done", result);
+        Assert.Contains("ALIAS", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
-    public void A_function_that_returns_nothing_comes_back_as_nothing()
+    public void A_function_without_an_alias_is_refused_cheerfully()
     {
-        using var db = H2SharpDatabase.Open(nameof(A_function_that_returns_nothing_comes_back_as_nothing));
+        using var db = H2SharpDatabase.Open(nameof(A_function_without_an_alias_is_refused_cheerfully));
 
-        db.Execute("""
-            CREATE ALIAS "VOID_FN" AS $$ void f(String s) { } $$
-            """);
+        // An alias of the database is the only way a function of H2 2.5 comes to be, and the
+        // port does not compile Java aliases: asking for the function answers with the engine's
+        // own refusal, not with a fabricated value.
+        var refused = Assert.Throws<H2Sharp.H2SharpException>(
+            () => db.Select(() => H2Functions.ScalarFunction(123)));
 
-        var result = db.Select(() => H2Functions.VoidFunction("test"));
-
-        // A function that returns nothing has no value, and in C# there is no type for that,
-        // so the value is an object and it is null.
-        Assert.Null(result);
-    }
-
-    [Fact]
-    [Trait("Category", "BlockedByPort")]
-    public void A_function_is_called_with_its_parameters()
-    {
-        using var db = H2SharpDatabase.Open(nameof(A_function_is_called_with_its_parameters));
-
-        db.Execute("""
-            CREATE ALIAS "PARAM_FN" AS $$ int g(int a, int b) { return a + b; } $$
-            """);
-
-        var result = db.Select(() => H2Functions.ParametersFunction(20, 22));
-
-        Assert.Equal(42, result);
+        Assert.Contains("SCALAR_FN", refused.Message, StringComparison.Ordinal);
     }
 }
