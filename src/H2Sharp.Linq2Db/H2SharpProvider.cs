@@ -111,6 +111,11 @@ public class H2SharpProvider : DataProviderBase
             // without the "@". A parameter named with the "@" would not be found.
             h2Parameter.ParameterName = name;
 
+            // Preserve the declared ADO.NET type as DataProviderBase.SetParameter does.
+            // In particular, DataType.Time must reach the engine as DbType.Time:
+            // an untyped TimeSpan represents an INTERVAL rather than a time of day.
+            SetParameterType(dataConnection, h2Parameter, dataType);
+
             // A JSON column holds a document: handing the text over as a plain string stores a
             // string (and reads it back escaped, in quotes). A JsonDocument is stored as a
             // document and read back as one.

@@ -72,10 +72,10 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
         {
             if (name.Schema is { } schema)
             {
-                sb.Append('"').Append(schema).Append('"').Append('.');
+                sb.Append('"').Append(schema.Replace("\"", "\"\"")).Append('"').Append('.');
             }
 
-            sb.Append('"').Append(name.Name).Append('"');
+            sb.Append('"').Append(name.Name.Replace("\"", "\"\"")).Append('"');
         }
         else
         {

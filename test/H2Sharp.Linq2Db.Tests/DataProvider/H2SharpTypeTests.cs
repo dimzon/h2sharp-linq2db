@@ -60,14 +60,12 @@ public class H2SharpTypeTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void A_time_comes_back_as_it_went_in()
     {
         using var db = H2SharpDatabase.Open(nameof(A_time_comes_back_as_it_went_in));
 
-        // H2 2.5 holds a time of day in a TIME column and hands it over as a time span. The port
-        // turns the time span into an interval on the way in and cannot turn the interval into a
-        // time afterwards.
+        // TIME carries the declared DbType.Time into the ADO.NET parameter; the value
+        // is a time of day, distinct from an untyped TimeSpan duration.
         H2SharpTypeRoundTrip.Check<TimeSpan?>(db, "Time", "time", new TimeSpan(12, 12, 12), DataType.Time);
     }
 

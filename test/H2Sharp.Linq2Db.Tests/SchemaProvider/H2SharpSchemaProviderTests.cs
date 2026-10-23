@@ -71,7 +71,6 @@ public class H2SharpSchemaProviderTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public async Task The_catalogue_carries_the_comments()
     {
         await using var db = H2SharpDatabase.Open(nameof(The_catalogue_carries_the_comments));

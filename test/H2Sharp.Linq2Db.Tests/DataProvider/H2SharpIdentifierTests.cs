@@ -74,7 +74,6 @@ public class H2SharpIdentifierTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void A_quote_inside_a_name_is_doubled()
     {
         using var db = H2SharpDatabase.Open(nameof(A_quote_inside_a_name_is_doubled));
