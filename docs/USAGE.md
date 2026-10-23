@@ -461,7 +461,7 @@ as it stands. The things that wait for the engine:
    | the pipes `\|\|` | `SELECT 'a' [*]\|\| 'b'` — the reference takes it, the port does not read it |
    | `CURRENT_TIMESTAMP` | `Not ported yet: ExpressionColumn.GetValue: no resolver is set on this expression` |
    | `= ANY` with a list | `Not ported yet: Parser.parseQuerySelect: aggregate calls outside the select list are not ported` |
-   | `TIME` out of a time span | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` |
+   | `TIME` out of a time span | Works: DataType.Time is passed to ADO.NET as DbType.Time; undeclared TimeSpan values remain intervals |
    | `DB_CLOSE_DELAY` and a file database | `Not ported yet: Engine.openSession: persistent databases need the file store` — the store itself is in the port and its format is compatible with H2 2.5, but a session does not open a file database; and a pooled connection takes the database with it |
 
 The full list, with what each of them costs, is in

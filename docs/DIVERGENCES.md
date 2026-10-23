@@ -74,7 +74,7 @@
 | `COMMENT ON` | `COMMENT ON TABLE "Rows" IS ...` — ожидалось `statement` | дефект порта |
 | внешние ключи в DDL | `CONSTRAINT ... FOREIGN KEY (...) REFERENCES ...` — ожидалось `)` | дефект порта |
 | чтение большого объекта | `ValueLob.copyToResult: lob storage is not ported` — контракт ADO у порта уже верный: `GetValue` отдаёт материализованное значение (`string` для `clob`, `byte[]` для `blob`), поток идёт через `GetStream`/`GetTextReader`; не хватает одного шага — `ValueLob.CopyToResult` переносит содержимое LOB в результат, а он не портирован | дефект порта |
-| `TIME` из `TimeSpan` | `Data conversion error converting "INTERVAL DAY TO SECOND to TIME"` | дефект порта |
+| `TIME` из `TimeSpan` | **исправлен провайдер**: SetParameter теперь вызывает стандартный SetParameterType, поэтому DataType.Time передаётся как DbType.Time. TimeOnly также принимается движком как TIME. Необъявленный TimeSpan остаётся INTERVAL | — |
 | два параметра в выражении | `SELECT ? [*]+ ?` — ожидалось `statement` | дефект порта |
 | `LIMIT` с параметром | **читается** (движок перенёс счётчики `LIMIT` как выражения и считает их в момент выполнения): `LIMIT @p` принимается, и эталон на JVM отвечает тем же | — |
 | удвоенная кавычка в имени | `Tokenizer.ReadQuotedIdentifier` не читает `""` внутри имени | дефект порта |
@@ -96,6 +96,25 @@
 | `TIME WITH TIME ZONE` и `INTERVAL` в DDL | `ожидалось ")"`: эталон оба типа читает (`TIME WITH TIME ZONE`, `INTERVAL YEAR`) | дефект порта (та же семья, что dimzon/h2sharp#14 — типы в DDL) |
 
 ## Что схемный провайдер делает и почему
+
+### TIME-параметр: исправление провайдера (`6.5.3-alpha.1`, dimzon/h2sharp#41)
+
+`H2SharpProvider.SetParameter` устанавливал только имя и значение, пропуская
+`DataProviderBase.SetParameterType`. В результате объявленный `DataType.Time`
+не попадал в `H2Parameter.DbType`, а TimeSpan без `DbType.Time` закономерно
+становился интервалом. Вызов стандартного SetParameterType восстановлен;
+это дефект провайдера, а не конверсии TIME в движке.
+
+`A_time_comes_back_as_it_went_in` проходит, trait BlockedByPort снят с
+исправлением. Порт уже поддерживал TimeOnly и TimeSpan с DbType.Time; матрица
+соответствий сверена в движке с JDBC LocalTime/Duration. Необъявленная
+длительность не превращается автоматически во время суток.
+
+Исправление и снятие трейта вошли в `4457ef4`. Проверено: модульные тесты
+с Category!=BlockedByPort **75/75** в Release на net8.0/net10.0; ModelTests
+**173/173** с тем же фильтром на net10.0, включая TimeOnly в TypedRow.
+Оставшиеся два модульных BlockedByPort-теста падают на каждом TFM и не
+связаны с TIME.
 
 `GetSchemaProvider()` у linq2db — обязательный член, и его нельзя не реализовать. Каталог H2
 (`INFORMATION_SCHEMA`) — единственный каталог, который у H2 2.5 есть, и провайдер читает его так,
