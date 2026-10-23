@@ -33,7 +33,7 @@
 [CmdletBinding()]
 param(
     [string] $ResultsDirectory = "TestResults",
-    [double] $Threshold = 0.81,
+    [double] $Threshold = 0.86,
     [string] $Report = ""
 )
 

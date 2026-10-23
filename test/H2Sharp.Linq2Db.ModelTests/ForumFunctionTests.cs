@@ -700,4 +700,70 @@ public class ForumFunctionTests
 
         Assert.Equal("many", title);
     }
+
+    [Fact]
+    public void The_parts_of_a_date_are_asked_for_by_the_part_name()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_parts_of_a_date_are_asked_for_by_the_part_name));
+
+        var parts = db.Topics()
+            .Where(t => t.Title == "Reading a query plan")
+            .Select(t => new
+            {
+                Year = Sql.DatePart(Sql.DateParts.Year, t.CreatedAt),
+                Quarter = Sql.DatePart(Sql.DateParts.Quarter, t.CreatedAt),
+                Month = Sql.DatePart(Sql.DateParts.Month, t.CreatedAt),
+                Day = Sql.DatePart(Sql.DateParts.Day, t.CreatedAt),
+                Week = Sql.DatePart(Sql.DateParts.Week, t.CreatedAt),
+                Hour = Sql.DatePart(Sql.DateParts.Hour, t.CreatedAt),
+                Minute = Sql.DatePart(Sql.DateParts.Minute, t.CreatedAt),
+                Second = Sql.DatePart(Sql.DateParts.Second, t.CreatedAt),
+                Millisecond = Sql.DatePart(Sql.DateParts.Millisecond, t.CreatedAt),
+                WeekDay = Sql.DatePart(Sql.DateParts.WeekDay, t.CreatedAt),
+                DayOfYear = Sql.DatePart(Sql.DateParts.DayOfYear, t.CreatedAt),
+            })
+            .First();
+
+        Assert.Equal(2024, parts.Year);
+        Assert.Equal(1, parts.Quarter);
+        Assert.Equal(1, parts.Month);
+        Assert.Equal(16, parts.Day);
+        Assert.Equal(3, parts.Week);
+        Assert.Equal(9, parts.Hour);
+        Assert.Equal(0, parts.Minute);
+        Assert.Equal(0, parts.Second);
+        Assert.Equal(0, parts.Millisecond);
+        Assert.Equal(2, parts.WeekDay);
+        Assert.Equal(16, parts.DayOfYear);
+    }
+
+    [Fact]
+    public void The_date_is_moved_by_every_part()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_date_is_moved_by_every_part));
+
+        var moved = db.Topics()
+            .Where(t => t.Title == "Reading a query plan")
+            .Select(t => new
+            {
+                Year = Sql.DateAdd(Sql.DateParts.Year, 1, t.CreatedAt),
+                Quarter = Sql.DateAdd(Sql.DateParts.Quarter, 1, t.CreatedAt),
+                Month = Sql.DateAdd(Sql.DateParts.Month, 1, t.CreatedAt),
+                Week = Sql.DateAdd(Sql.DateParts.Week, 1, t.CreatedAt),
+                Hour = Sql.DateAdd(Sql.DateParts.Hour, 1, t.CreatedAt),
+                Minute = Sql.DateAdd(Sql.DateParts.Minute, 1, t.CreatedAt),
+                Second = Sql.DateAdd(Sql.DateParts.Second, 1, t.CreatedAt),
+                Millisecond = Sql.DateAdd(Sql.DateParts.Millisecond, 1, t.CreatedAt),
+            })
+            .First();
+
+        Assert.Equal(new DateTime(2025, 1, 16, 9, 0, 0), moved.Year);
+        Assert.Equal(new DateTime(2024, 4, 16, 9, 0, 0), moved.Quarter);
+        Assert.Equal(new DateTime(2024, 2, 16, 9, 0, 0), moved.Month);
+        Assert.Equal(new DateTime(2024, 1, 23, 9, 0, 0), moved.Week);
+        Assert.Equal(new DateTime(2024, 1, 16, 10, 0, 0), moved.Hour);
+        Assert.Equal(new DateTime(2024, 1, 16, 9, 1, 0), moved.Minute);
+        Assert.Equal(new DateTime(2024, 1, 16, 9, 0, 1), moved.Second);
+        Assert.Equal(new DateTime(2024, 1, 16, 9, 0, 0, 1), moved.Millisecond);
+    }
 }
