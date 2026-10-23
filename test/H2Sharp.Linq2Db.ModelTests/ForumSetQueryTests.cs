@@ -3,6 +3,7 @@
  * Licensed under the MIT License (see LICENSE).
  */
 using H2Sharp.Linq2Db.ModelTests.Model;
+using H2Sharp.Linq2Db.ModelTests.Seeding;
 
 using LinqToDB;
 using LinqToDB.DataProvider.H2Sharp;
@@ -233,6 +234,24 @@ public class ForumSetQueryTests
             .ToList();
 
         Assert.Equal([3, 4], apart);
+    }
+
+    [Fact]
+    [Trait("Category", "BlockedByPort")]
+    public void The_answers_of_one_topic_are_gathered_in_order()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_answers_of_one_topic_are_gathered_in_order));
+
+        // WITHIN GROUP in LISTAGG is not read by the port yet (engine issue dimzon/h2sharp#35):
+        // the reference answers the bodies in the requested order.
+        string gathered = db.Posts()
+            .Where(p => p.TopicId == 1)
+            .Select(p => Sql.Ext.ListAgg(p.Body, ", ").WithinGroup.OrderBy(p.Id).ToValue())
+            .First();
+
+        Assert.Equal(
+            string.Join(", ", ForumData.Posts().Where(p => p.TopicId == 1).OrderBy(p => p.Id).Select(p => p.Body)),
+            gathered);
     }
 
     [Fact]

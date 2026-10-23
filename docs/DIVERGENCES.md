@@ -278,10 +278,11 @@
 | Прогон | Прошло | Упало | Всего |
 |---|---:|---:|---:|
 | `Category!=BlockedByPort` | 169 | 0 | 169 |
-| `Category=BlockedByPort` | 0 | 2 | 2 |
+| `Category=BlockedByPort` | 0 | 3 | 3 |
 
-Два красных — `INTERSECT` и `EXCEPT` (engine issue dimzon/h2sharp#33): эталон читает,
-порт отвечает `expected ")"`. Остальные формы закрыты: `= ANY` с параметром работает
+Три красных — три формы, которые эталон H2 2.5 принимает, а порт пока не читает:
+`INTERSECT`, `EXCEPT` (engine issue dimzon/h2sharp#33) и `WITHIN GROUP` в `LISTAGG`
+(engine issue dimzon/h2sharp#35). Остальные формы закрыты: `= ANY` с параметром работает
 при явном `DataParameter` (анонимный объект с массивом теряет параметр — дефект
 провайдера, см. ниже), а чтение `json` вернуло документ после того, как провайдер
 стал передавать JSON как `JsonDocument`.
