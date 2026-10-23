@@ -240,7 +240,6 @@ public class UsageExamplesTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void A_window_function_runs_in_the_database()
     {
         using var db = H2SharpTools.CreateDataConnection("jdbc:h2:mem:windowrun");
@@ -256,7 +255,7 @@ public class UsageExamplesTests
 
         db.Insert(new Blog { Id = 1, Name = "Foo", Created = DateTime.UtcNow });
 
-        // The port does not read OVER yet.
+        // ROW_NUMBER is evaluated by the engine over the window ordering.
         var numbers = db.GetTable<Blog>()
             .OrderBy(b => b.Id)
             .Select(b => new

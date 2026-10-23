@@ -70,7 +70,7 @@
 | общее табличное выражение | **читается** (движок перенёс `WITH c AS (…)`): принимается | — |
 | `IN (подзапрос)` | `Parser.parseQuerySelect: IN with a subquery is not ported` | дефект порта |
 | `MERGE` | `[*]MERGE INTO T AS t USING U AS u ...` — ожидалось `statement` | дефект порта |
-| оконные функции | `OVER` не портирован; `FILTER (WHERE ...)` у агрегата читается (`69d522a`) | дефект порта |
+| оконные функции | **читаются**: COUNT OVER и перенесённые в 0.1.38-alpha.1 (`63af10e`) ROW_NUMBER/ранги/функции значения; A_window_function_runs_in_the_database проходит. FILTER читался с `69d522a` | — |
 | `COMMENT ON` | `COMMENT ON TABLE "Rows" IS ...` — ожидалось `statement` | дефект порта |
 | внешние ключи в DDL | `CONSTRAINT ... FOREIGN KEY (...) REFERENCES ...` — ожидалось `)` | дефект порта |
 | чтение большого объекта | `ValueLob.copyToResult: lob storage is not ported` — контракт ADO у порта уже верный: `GetValue` отдаёт материализованное значение (`string` для `clob`, `byte[]` для `blob`), поток идёт через `GetStream`/`GetTextReader`; не хватает одного шага — `ValueLob.CopyToResult` переносит содержимое LOB в результат, а он не портирован | дефект порта |
