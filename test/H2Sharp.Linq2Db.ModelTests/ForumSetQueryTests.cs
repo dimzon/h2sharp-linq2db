@@ -204,6 +204,38 @@ public class ForumSetQueryTests
     }
 
     [Fact]
+    [Trait("Category", "BlockedByPort")]
+    public void The_authors_in_both_topics_are_met()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_authors_in_both_topics_are_met));
+
+        // INTERSECT is not read by the port yet (engine issue dimzon/h2sharp#33):
+        // the reference answers [1, 2].
+        List<int> met = db.Posts().Where(p => p.TopicId == 1).Select(p => p.AuthorId)
+            .Intersect(db.Posts().Where(p => p.TopicId == 2).Select(p => p.AuthorId))
+            .OrderBy(a => a)
+            .ToList();
+
+        Assert.Equal([1, 2], met);
+    }
+
+    [Fact]
+    [Trait("Category", "BlockedByPort")]
+    public void The_authors_in_only_one_topic_are_set_apart()
+    {
+        using var db = ForumDatabase.Filled(nameof(The_authors_in_only_one_topic_are_set_apart));
+
+        // EXCEPT is not read by the port yet (engine issue dimzon/h2sharp#33):
+        // the reference answers [3, 4].
+        List<int> apart = db.Posts().Where(p => p.TopicId == 1).Select(p => p.AuthorId)
+            .Except(db.Posts().Where(p => p.TopicId == 2).Select(p => p.AuthorId))
+            .OrderBy(a => a)
+            .ToList();
+
+        Assert.Equal([3, 4], apart);
+    }
+
+    [Fact]
     public void The_rows_are_asked_for_with_a_group_and_an_order()
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_with_a_group_and_an_order));
