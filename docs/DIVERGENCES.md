@@ -278,14 +278,15 @@
 | Прогон | Прошло | Упало | Всего |
 |---|---:|---:|---:|
 | `Category!=BlockedByPort` | 169 | 0 | 169 |
-| `Category=BlockedByPort` | 0 | 3 | 3 |
+| `Category=BlockedByPort` | 0 | 4 | 4 |
 
-Три красных — три формы, которые эталон H2 2.5 принимает, а порт пока не читает:
-`INTERSECT`, `EXCEPT` (engine issue dimzon/h2sharp#33) и `WITHIN GROUP` в `LISTAGG`
-(engine issue dimzon/h2sharp#35). Остальные формы закрыты: `= ANY` с параметром работает
-при явном `DataParameter` (анонимный объект с массивом теряет параметр — дефект
-провайдера, см. ниже), а чтение `json` вернуло документ после того, как провайдер
-стал передавать JSON как `JsonDocument`.
+Четыре красных — четыре формы, которые эталон H2 2.5 принимает, а порт пока не читает:
+`INTERSECT`, `EXCEPT` (engine issue dimzon/h2sharp#33), `WITHIN GROUP` в `LISTAGG`
+(engine issue dimzon/h2sharp#35) и `FILTER (WHERE ...)` у агрегата — порт его молча
+игнорирует (engine issue dimzon/h2sharp#38). Остальные формы закрыты: `= ANY` с
+параметром работает при явном `DataParameter` (анонимный объект с массивом теряет
+параметр — дефект провайдера, см. ниже), а чтение `json` вернуло документ после
+того, как провайдер стал передавать JSON как `JsonDocument`.
 
 Покрытие провайдера, измеренное этим набором: **823 из 1014 строк (81,16 %)**. Порог держит
 `tools/CheckCoverage.ps1`.
