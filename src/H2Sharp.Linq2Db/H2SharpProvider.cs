@@ -110,7 +110,16 @@ public class H2SharpProvider : DataProviderBase
             // that into "?" before the statement is parsed, looking the parameter up by the name
             // without the "@". A parameter named with the "@" would not be found.
             h2Parameter.ParameterName = name;
-            h2Parameter.Value         = value ?? DBNull.Value;
+
+            // A JSON column holds a document: handing the text over as a plain string stores a
+            // string (and reads it back escaped, in quotes). A JsonDocument is stored as a
+            // document and read back as one.
+            if (dataType.DataType == DataType.Json && value is string json)
+            {
+                value = System.Text.Json.JsonDocument.Parse(json);
+            }
+
+            h2Parameter.Value = value ?? DBNull.Value;
         }
         else
         {

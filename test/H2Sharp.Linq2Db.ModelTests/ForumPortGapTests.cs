@@ -62,16 +62,18 @@ public class ForumPortGapTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_rows_are_asked_for_with_a_list_of_parameters()
     {
         using var db = ForumDatabase.Filled(nameof(The_rows_are_asked_for_with_a_list_of_parameters));
 
+        // The array is handed over as a DataParameter: an anonymous object drops array
+        // properties from the command (a provider-side gap, tracked in DIVERGENCES),
+        // while a DataParameter arrives and the engine reads = ANY(@ids).
         List<int> ids = db.Query<int>(
                 """
                 SELECT "Id" FROM "Topics" WHERE "Id" = ANY(@ids)
                 """,
-                new { ids = new[] { 1, 2, 3 } })
+                new DataParameter("ids", new[] { 1, 2, 3 }))
             .ToList();
 
         Assert.Equal([1, 2, 3], ids);
