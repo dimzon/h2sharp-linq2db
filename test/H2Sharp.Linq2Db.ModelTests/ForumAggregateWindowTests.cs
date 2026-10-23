@@ -15,7 +15,6 @@ public class ForumAggregateWindowTests
         => throw new ServerSideOnlyException(nameof(CountWhere));
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_hidden_answers_are_counted_with_a_filter()
     {
         using var db = ForumDatabase.Filled(nameof(The_hidden_answers_are_counted_with_a_filter));

@@ -70,7 +70,7 @@
 | общее табличное выражение | **читается** (движок перенёс `WITH c AS (…)`): принимается | — |
 | `IN (подзапрос)` | `Parser.parseQuerySelect: IN with a subquery is not ported` | дефект порта |
 | `MERGE` | `[*]MERGE INTO T AS t USING U AS u ...` — ожидалось `statement` | дефект порта |
-| оконные функции | `OVER`/`FILTER` не портированы | дефект порта |
+| оконные функции | `OVER` не портирован; `FILTER (WHERE ...)` у агрегата читается (`69d522a`) | дефект порта |
 | `COMMENT ON` | `COMMENT ON TABLE "Rows" IS ...` — ожидалось `statement` | дефект порта |
 | внешние ключи в DDL | `CONSTRAINT ... FOREIGN KEY (...) REFERENCES ...` — ожидалось `)` | дефект порта |
 | чтение большого объекта | `ValueLob.copyToResult: lob storage is not ported` — контракт ADO у порта уже верный: `GetValue` отдаёт материализованное значение (`string` для `clob`, `byte[]` для `blob`), поток идёт через `GetStream`/`GetTextReader`; не хватает одного шага — `ValueLob.CopyToResult` переносит содержимое LOB в результат, а он не портирован | дефект порта |
@@ -87,7 +87,9 @@
 | трубы `\|\|` | **читаются** (коммит движка «Arrays end to end»): `'a' || 'b'` принимается | — |
 | массивы: DDL, литералы, функции, `UNNEST` | **читаются** (коммит движка «Arrays end to end» `f24e67e`): `integer ARRAY`, `ARRAY[...]`, `ARRAY_CONTAINS`, `ARRAY_CAT`, `ARRAY_LENGTH`, `CARDINALITY`, `UNNEST(...) WITH ORDINALITY`, `= ANY` через подзапрос принимаются | — |
 | `ENUM` со строками | **читается** (коммит движка `56787de`): `ENUM('Guest','Member')` принимается, значения — строки, порядок перечисления | — |
-| `INTERSECT`/`EXCEPT` | **не читаются**: `expected ")"` на `[*]INTERSECT`/`[*]EXCEPT`; эталон оба читает | дефект порта (dimzon/h2sharp#33) |
+| `INTERSECT`/`EXCEPT` | **читаются** (коммит движка «Port set operations» `69d522a`): `INTERSECT` и `EXCEPT` отвечают строками | — |
+| `LISTAGG` с `WITHIN GROUP` | **читается** (коммит движка `69d522a`): `WITHIN GROUP (ORDER BY ...)` отвечает | — |
+| `FILTER (WHERE ...)` | **читается** (коммит движка `69d522a`): у агрегата условие применяется | — |
 | `= ANY` с параметром | **читается** (движок `dc67fbc`): `= ANY(@ids)` с параметром-массивом отвечает строками | — |
 | чтение `JSON` | **читается**: колонка `JSON` хранит документ; H2 хранит его канонически (`{"a":1}`) | — |
 | `ENUM` | **читается** (коммит движка `56787de`): значения — строки, дубли запрещены, порядок перечисления; провайдеры держат енумы в числовых колонках и на тип `ENUM` не переходят | — |
@@ -277,16 +279,18 @@
 
 | Прогон | Прошло | Упало | Всего |
 |---|---:|---:|---:|
-| `Category!=BlockedByPort` | 169 | 0 | 169 |
-| `Category=BlockedByPort` | 0 | 4 | 4 |
+| `Category!=BlockedByPort` | 173 | 0 | 173 |
+| `Category=BlockedByPort` | 0 | 0 | 0 |
 
-Четыре красных — четыре формы, которые эталон H2 2.5 принимает, а порт пока не читает:
-`INTERSECT`, `EXCEPT` (engine issue dimzon/h2sharp#33), `WITHIN GROUP` в `LISTAGG`
-(engine issue dimzon/h2sharp#35) и `FILTER (WHERE ...)` у агрегата — порт его молча
-игнорирует (engine issue dimzon/h2sharp#38). Остальные формы закрыты: `= ANY` с
-параметром работает при явном `DataParameter` (анонимный объект с массивом теряет
-параметр — дефект провайдера, см. ниже), а чтение `json` вернуло документ после
-того, как провайдер стал передавать JSON как `JsonDocument`.
+Блок пуст: всё, что эталон принимает, порт читает. `INTERSECT`, `EXCEPT`,
+`WITHIN GROUP` в `LISTAGG` и `FILTER (WHERE ...)` у агрегата читаются с коммитом
+движка `69d522a` («Port set operations, savepoints, ordered aggregates and scalar
+subqueries») — тесты `The_authors_in_both_topics_are_met`,
+`The_authors_in_only_one_topic_are_set_apart`,
+`The_answers_of_one_topic_are_gathered_in_order`,
+`The_hidden_answers_are_counted_with_a_filter` разблокированы. `= ANY` с параметром
+работает при явном `DataParameter`; чтение `json` вернуло документ после того, как
+провайдер стал передавать JSON как `JsonDocument`.
 
 Покрытие провайдера, измеренное этим набором: **823 из 1014 строк (81,16 %)**. Порог держит
 `tools/CheckCoverage.ps1`.

@@ -205,7 +205,6 @@ public class ForumSetQueryTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_authors_in_both_topics_are_met()
     {
         using var db = ForumDatabase.Filled(nameof(The_authors_in_both_topics_are_met));
@@ -221,7 +220,6 @@ public class ForumSetQueryTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_authors_in_only_one_topic_are_set_apart()
     {
         using var db = ForumDatabase.Filled(nameof(The_authors_in_only_one_topic_are_set_apart));
@@ -237,7 +235,6 @@ public class ForumSetQueryTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_answers_of_one_topic_are_gathered_in_order()
     {
         using var db = ForumDatabase.Filled(nameof(The_answers_of_one_topic_are_gathered_in_order));
