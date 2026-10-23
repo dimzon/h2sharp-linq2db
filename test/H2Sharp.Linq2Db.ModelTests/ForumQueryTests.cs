@@ -206,23 +206,21 @@ public class ForumQueryTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void It_is_asked_whether_there_is_a_row()
     {
         using var db = ForumDatabase.Filled(nameof(It_is_asked_whether_there_is_a_row));
 
-        Assert.True(db.Topics().Any(t => t.ViewCount > 1000));
-        Assert.False(db.Topics().Any(t => t.ViewCount > 5000));
+        Assert.True(db.GetTable<Topic>().Any(t => t.ViewCount > 1000));
+        Assert.False(db.GetTable<Topic>().Any(t => t.ViewCount > 5000));
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void It_is_asked_whether_every_row_says_yes()
     {
         using var db = ForumDatabase.Filled(nameof(It_is_asked_whether_every_row_says_yes));
 
-        Assert.True(db.Topics().All(t => t.ViewCount > 0));
-        Assert.False(db.Topics().All(t => t.ViewCount > 100));
+        Assert.True(db.GetTable<Topic>().All(t => t.ViewCount > 0));
+        Assert.False(db.GetTable<Topic>().All(t => t.ViewCount > 100));
     }
 
     [Fact]
@@ -475,13 +473,12 @@ public class ForumQueryTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_topics_that_have_answers_are_asked_for()
     {
         using var db = ForumDatabase.Filled(nameof(The_topics_that_have_answers_are_asked_for));
 
-        List<string> titles = db.Topics()
-            .Where(t => db.Posts().Any(p => p.TopicId == t.Id))
+        List<string> titles = db.GetTable<Topic>()
+            .Where(t => db.GetTable<Post>().Any(p => p.TopicId == t.Id))
             .OrderBy(t => t.Id)
             .Select(t => t.Title)
             .ToList();

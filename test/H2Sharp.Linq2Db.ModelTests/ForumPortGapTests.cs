@@ -26,7 +26,6 @@ namespace H2Sharp.Linq2Db.ModelTests;
 public class ForumPortGapTests
 {
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_texts_are_joined_with_the_pipes()
     {
         using var db = ForumDatabase.Filled(nameof(The_texts_are_joined_with_the_pipes));
@@ -37,7 +36,6 @@ public class ForumPortGapTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void The_moment_of_the_database_is_asked_for()
     {
         using var db = ForumDatabase.Filled(nameof(The_moment_of_the_database_is_asked_for));

@@ -32,7 +32,7 @@ namespace H2Sharp.Linq2Db.ModelTests;
 public class ForumArrayTests
 {
     [Table("Shelves")]
-    private sealed class Shelf
+    internal sealed class Shelf
     {
         [Column("Id", IsPrimaryKey = true)]
         public int Id { get; set; }
@@ -42,7 +42,6 @@ public class ForumArrayTests
     }
 
     [Fact]
-    [Trait("Category", "BlockedByPort")]
     public void Arrays_are_stored_in_their_columns()
     {
         using var db = ForumDatabase.Open(nameof(Arrays_are_stored_in_their_columns));
@@ -54,19 +53,56 @@ public class ForumArrayTests
         db.Insert(first);
         db.Insert(second);
 
-        List<int> holding = db.GetTable<Shelf>().Where(s => s.Forums.Contains(2)).Select(s => s.Id).ToList();
+        List<int> holding = db.Shelves().Where(s => s.Forums.Contains(2)).Select(s => s.Id).ToList();
 
         Assert.Equal([1, 2], holding);
 
-        List<int> whole = db.GetTable<Shelf>().Where(s => s.Forums.SequenceEqual(new[] { 1, 2, 3 })).Select(s => s.Id).ToList();
+        List<int> whole = db.Shelves().Where(s => s.Forums.SequenceEqual(new[] { 1, 2, 3 })).Select(s => s.Id).ToList();
 
         Assert.Equal([1], whole);
+
+        int length = db.Shelves().Where(s => s.Id == 1).Select(s => s.Forums.Length).First();
+
+        Assert.Equal(3, length);
+
+        int element = db.Shelves().Where(s => s.Id == 1).Select(s => s.Forums[1]).First();
+
+        Assert.Equal(2, element);
 
         db.DropTable<Shelf>();
     }
 
+    [Fact]
+    public void Array_functions_run_against_the_engine()
+    {
+        using var db = ForumDatabase.Open(nameof(Array_functions_run_against_the_engine));
+
+        db.CreateTable<Shelf>();
+        db.Insert(new Shelf { Id = 1, Forums = [1, 2, 3] });
+        db.Insert(new Shelf { Id = 2, Forums = [2] });
+
+        try
+        {
+            int count = db.Shelves().Where(s => s.Id == 1).Select(s => H2SharpSpecificExtensions.Cardinality(s.Forums)).First();
+            Assert.Equal(3, count);
+
+            int joined = db.Shelves().Where(s => s.Id == 1).Select(s => H2SharpSpecificExtensions.ArrayCat(s.Forums, new[] { 4 }).Length).First();
+            Assert.Equal(4, joined);
+
+            int appended = db.Shelves().Where(s => s.Id == 1).Select(s => H2SharpSpecificExtensions.ArrayAppend(s.Forums, 4).Length).First();
+            Assert.Equal(4, appended);
+
+            bool has = db.Shelves().Where(s => s.Id == 1).Select(s => H2SharpSpecificExtensions.ArrayContains(s.Forums, 2)).First();
+            Assert.True(has);
+        }
+        finally
+        {
+            db.DropTable<Shelf>();
+        }
+    }
+
     [Table("KeyedRows")]
-    private sealed class KeyedRow
+    internal sealed class KeyedRow
     {
         [Column("Id", IsPrimaryKey = true)]
         public int Id { get; set; }
@@ -87,7 +123,7 @@ public class ForumArrayTests
         object key = db.InsertWithIdentity(new KeyedRow { Id = 7, Name = "seven" });
 
         Assert.Equal(7, Convert.ToInt32(key));
-        Assert.Equal("seven", db.GetTable<KeyedRow>().Single(r => r.Id == 7).Name);
+        Assert.Equal("seven", db.KeyedRows().Single(r => r.Id == 7).Name);
 
         db.DropTable<KeyedRow>();
     }
@@ -103,7 +139,7 @@ public class ForumArrayTests
 
         Assert.Contains(
             "\"Forums\" =",
-            GeneratedSql(db, () => db.GetTable<Shelf>().Where(s => s.Forums.SequenceEqual(wanted)).ToList()),
+            GeneratedSql(db, () => db.Shelves().Where(s => s.Forums.SequenceEqual(wanted)).ToList()),
             StringComparison.Ordinal);
     }
 
@@ -114,7 +150,7 @@ public class ForumArrayTests
 
         Assert.Contains(
             "ARRAY_CONTAINS",
-            GeneratedSql(db, () => db.GetTable<Shelf>().Where(s => s.Forums.Contains(2)).ToList()),
+            GeneratedSql(db, () => db.Shelves().Where(s => s.Forums.Contains(2)).ToList()),
             StringComparison.Ordinal);
     }
 
@@ -125,7 +161,7 @@ public class ForumArrayTests
 
         Assert.Contains(
             "ARRAY_CONTAINS",
-            GeneratedSql(db, () => db.GetTable<Shelf>().Where(s => H2SharpSpecificExtensions.ArrayContains(s.Forums, 2)).ToList()),
+            GeneratedSql(db, () => db.Shelves().Where(s => H2SharpSpecificExtensions.ArrayContains(s.Forums, 2)).ToList()),
             StringComparison.Ordinal);
     }
 
@@ -134,7 +170,7 @@ public class ForumArrayTests
     {
         using var db = ForumDatabase.Open(nameof(The_number_of_the_elements_is_asked_with_cardinality));
 
-        string select = GeneratedSql(db, () => db.GetTable<Shelf>().Select(s => H2SharpSpecificExtensions.Cardinality(s.Forums)).ToList());
+        string select = GeneratedSql(db, () => db.Shelves().Select(s => H2SharpSpecificExtensions.Cardinality(s.Forums)).ToList());
 
         Assert.Contains("CARDINALITY", select, StringComparison.Ordinal);
         Assert.DoesNotContain("integer", select, StringComparison.OrdinalIgnoreCase);
@@ -147,7 +183,7 @@ public class ForumArrayTests
 
         Assert.Contains(
             "ARRAY_LENGTH",
-            GeneratedSql(db, () => db.GetTable<Shelf>().Select(s => H2SharpSpecificExtensions.ArrayLength(s.Forums)).ToList()),
+            GeneratedSql(db, () => db.Shelves().Select(s => H2SharpSpecificExtensions.ArrayLength(s.Forums)).ToList()),
             StringComparison.Ordinal);
     }
 
@@ -160,7 +196,7 @@ public class ForumArrayTests
 
         Assert.Contains(
             "ARRAY_CAT",
-            GeneratedSql(db, () => db.GetTable<Shelf>().Select(s => H2SharpSpecificExtensions.ArrayCat(s.Forums, extra)).ToList()),
+            GeneratedSql(db, () => db.Shelves().Select(s => H2SharpSpecificExtensions.ArrayCat(s.Forums, extra)).ToList()),
             StringComparison.Ordinal);
     }
 
@@ -171,7 +207,7 @@ public class ForumArrayTests
 
         Assert.Contains(
             "ARRAY_APPEND",
-            GeneratedSql(db, () => db.GetTable<Shelf>().Select(s => H2SharpSpecificExtensions.ArrayAppend(s.Forums, 9)).ToList()),
+            GeneratedSql(db, () => db.Shelves().Select(s => H2SharpSpecificExtensions.ArrayAppend(s.Forums, 9)).ToList()),
             StringComparison.Ordinal);
     }
 
@@ -212,4 +248,16 @@ public class ForumArrayTests
         Assert.NotNull(sql);
         return sql!;
     }
+}
+
+/// <summary>
+///     The tables of the array tests.
+/// </summary>
+internal static class ArrayTables
+{
+    public static ITable<ForumArrayTests.Shelf> Shelves(this IDataContext db)
+        => db.GetTable<ForumArrayTests.Shelf>();
+
+    public static ITable<ForumArrayTests.KeyedRow> KeyedRows(this IDataContext db)
+        => db.GetTable<ForumArrayTests.KeyedRow>();
 }

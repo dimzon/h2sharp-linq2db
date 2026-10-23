@@ -57,5 +57,9 @@ public class H2SharpMappingSchema : MappingSchema
         // The engine hands a TIME value over as a TimeSpan, and the model holds a TimeOnly:
         // without the conversion the row cannot be read back.
         SetConvertExpression<TimeSpan, TimeOnly>(span => TimeOnly.FromTimeSpan(span));
+
+        // The engine hands a JSON document over as UTF-8 bytes (the way the reference maps
+        // ValueJson), and the model holds the document as a string.
+        SetConvertExpression<byte[], string>(bytes => System.Text.Encoding.UTF8.GetString(bytes));
     }
 }

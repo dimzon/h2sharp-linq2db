@@ -81,12 +81,15 @@
 | `CREATE SEQUENCE` (в DDL провайдера) | **читается** (движок перенёс последовательности): `CREATE SEQUENCE "SequenceRows_Id"` принимается | — |
 | `CREATE ALIAS` (функции) | `CREATE [*]ALIAS "PARAM_FN" AS $$ ... $$` — ожидалось `TABLE` | дефект порта |
 | `DB_CLOSE_DELAY` и файловая база | `Not ported yet: Engine.openSession: persistent databases need the file store` — само хранилище в порте есть и формат его совместим с H2 2.5 (проверяет `MvStoreFileCompatTests`), но сессия не открывает файловую базу; и соединение из пула уносит базу с собой | дефект порта |
-| `EXISTS` | `Not ported yet: Parser.readTerm: the keyword function EXISTS is not ported` — эталон `EXISTS` принимает | дефект порта |
+| `EXISTS` | **читается** (коммит движка «Ask subqueries whether a row exists» `d86b2e1`): `Any`/`All` и коррелированные подзапросы отвечают | — |
 | трубы `\|\|` | `SELECT 'a' [*]\|\| 'b'` — ожидалось `statement`; эталон отвечает `ab` | дефект порта |
 | `CURRENT_TIMESTAMP` | **читается** (коммит движка `f724a3c`): движок читает `CURRENT_DATE`, `CURRENT_TIME`, `LOCALTIME`, `CURRENT_TIMESTAMP` и `LOCALTIMESTAMP` (а также `CURDATE`, `CURTIME` и `NOW`) | — |
-| `= ANY` со списком | `Not ported yet: Parser.parseQuerySelect: aggregate calls outside the select list are not ported`; эталон `= ANY(ARRAY[1,2,3])` принимает | дефект порта |
-| чтение `JSON` | `Not ported yet: H2ValueMapper.ToObject: no caller value for engine type JSON` — колонка создаётся и пишется, но чтение падает; эталон отдаёт документ текстом | дефект порта (dimzon/h2sharp#26) |
-| тип `ENUM` | порт читает `ENUM(...)`, но только с незакавыченными значениями: `expected "ENUM(Guest, ...)"`; эталон требует строки: `expected "character string"` | дефект порта (dimzon/h2sharp#25); провайдеры держат енумы в числовых колонках и на тип `ENUM` пока не переходят |
+| трубы `\|\|` | **читаются** (коммит движка «Arrays end to end»): `'a' || 'b'` принимается | — |
+| массивы: DDL, литералы, функции, `UNNEST` | **читаются** (коммит движка «Arrays end to end» `f24e67e`): `integer ARRAY`, `ARRAY[...]`, `ARRAY_CONTAINS`, `ARRAY_CAT`, `ARRAY_LENGTH`, `CARDINALITY`, `UNNEST(...) WITH ORDINALITY`, `= ANY` через подзапрос принимаются | — |
+| `ENUM` со строками | **читается** (коммит движка `56787de`): `ENUM('Guest','Member')` принимается, значения — строки, порядок перечисления | — |
+| `= ANY` с параметром | `Not ported yet: Parser.readTerm: variables (@name) are not ported` — параметр-массив не читается; литерал-массив `= ANY(ARRAY[1,2,3])` эталон читает | дефект порта (dimzon/h2sharp#32) |
+| чтение `JSON` | `H2ValueMapper.ToObject` отдаёт `byte[]` с экранированным литералом (`"{\"a\": 1}"`) вместо текста документа; эталон отдаёт `{"a": 1}` | дефект порта (dimzon/h2sharp#31) |
+| `ENUM` | **читается** (коммит движка `56787de`): значения — строки, дубли запрещены, порядок перечисления; провайдеры держат енумы в числовых колонках и на тип `ENUM` не переходят | — |
 | `TIME WITH TIME ZONE` и `INTERVAL` в DDL | `ожидалось ")"`: эталон оба типа читает (`TIME WITH TIME ZONE`, `INTERVAL YEAR`) | дефект порта (та же семья, что dimzon/h2sharp#14 — типы в DDL) |
 
 ## Что схемный провайдер делает и почему
@@ -273,14 +276,14 @@
 
 | Прогон | Прошло | Упало | Всего |
 |---|---:|---:|---:|
-| `Category!=BlockedByPort` | 161 | 0 | 161 |
-| `Category=BlockedByPort` | 1 | 7 | 8 |
+| `Category!=BlockedByPort` | 167 | 0 | 167 |
+| `Category=BlockedByPort` | 4 | 2 | 6 |
 
-Семь красных — семь форм, которые эталон H2 2.5 принимает, а порт пока не читает:
-`EXISTS`, трубы `||`, `= ANY` со списком, два запроса, которые linq2db пишет через `EXISTS`,
-массив в DDL и чтение `json`. Все семь перечислены в таблице пробелов порта выше.
-Шестым был `CURRENT_TIMESTAMP`, но движок теперь его читает (коммит `f724a3c`), и тест
-стал зелёным.
+Два красных — две формы, которые эталон H2 2.5 принимает, а порт пока не читает:
+`= ANY` с параметром (`Parser.readTerm: variables (@name) are not ported`) и чтение
+`json` (dimzon/h2sharp#31: `GetBytes` возвращает экранированный литерал вместо
+документа). `EXISTS`, `CURRENT_TIMESTAMP` и оба `Any`/`All`-запроса порт с тех пор
+читает, и их тесты стали зелёными.
 
 Покрытие провайдера, измеренное этим набором: **823 из 1014 строк (81,16 %)**. Порог держит
 `tools/CheckCoverage.ps1`.
