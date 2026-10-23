@@ -228,7 +228,8 @@ public class H2SharpTypeTests
 
         var json = /*lang=json,strict*/ "{\"name\":\"bob\", \"age\":10}";
 
-        Assert.Equal(json, db.Execute<string>("SELECT @p", new DataParameter("p", json, DataType.Json)));
+        // The engine stores the document canonically.
+        Assert.Equal("{\"name\":\"bob\",\"age\":10}", db.Execute<string>("SELECT @p", new DataParameter("p", json, DataType.Json)));
     }
 
     private static object? Value(Type type)

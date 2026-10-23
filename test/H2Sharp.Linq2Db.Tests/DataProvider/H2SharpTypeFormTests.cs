@@ -93,10 +93,9 @@ public class H2SharpTypeFormTests
         // other column.
         db.MappingSchema.SetDataType(typeof(int[]), DataType.Int32 | DataType.Array);
 
-        // The engine does not read the type ARRAY yet, so the table cannot be created; the
-        // statement is what this test is about, and the recorder has it whether the engine
-        // ran it or not.
-        Assert.ThrowsAny<Exception>(() => db.CreateTable<ArrayRow>());
+        // The engine reads the type ARRAY and creates the table; the recorder has the
+        // statement it ran.
+        db.CreateTable<ArrayRow>();
 
         // H2 writes the type of the elements and the word ARRAY after it. The brackets of
         // PostgreSQL (integer[]) the reference engine does not take.
