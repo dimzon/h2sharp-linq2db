@@ -106,9 +106,9 @@ public class H2SharpProvider : DataProviderBase
     {
         if (parameter is H2Parameter h2Parameter)
         {
-            // The engine's convention: the SQL names the parameter "@name" and the engine rewrites
-            // that into "?" before the statement is parsed, looking the parameter up by the name
-            // without the "@". A parameter named with the "@" would not be found.
+            // The ADO.NET provider names a parameter "$name" and rewrites it into "$N" before the
+            // statement is parsed, looking the parameter up by the name without the "$". The
+            // DbParameter itself keeps the bare name.
             h2Parameter.ParameterName = name;
 
             // Preserve the declared ADO.NET type as DataProviderBase.SetParameter does.

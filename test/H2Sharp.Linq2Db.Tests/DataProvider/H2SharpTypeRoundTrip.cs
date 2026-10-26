@@ -39,12 +39,12 @@ internal static class H2SharpTypeRoundTrip
 
     private const string PassNullSql =
         """
-        SELECT "ID" FROM "{1}" WHERE @p IS NULL AND "{0}" IS NULL OR @p IS NOT NULL AND "{0}" = @p
+        SELECT "ID" FROM "{1}" WHERE $p IS NULL AND "{0}" IS NULL OR $p IS NOT NULL AND "{0}" = $p
         """;
 
     private const string PassValueSql =
         """
-        SELECT "ID" FROM "{1}" WHERE "{0}" = @p
+        SELECT "ID" FROM "{1}" WHERE "{0}" = $p
         """;
 
     /// <summary>
@@ -73,7 +73,7 @@ internal static class H2SharpTypeRoundTrip
             """);
 
         db.Execute($"""
-            INSERT INTO "{tableName}" ("ID", "{columnName}") VALUES (2, @p)
+            INSERT INTO "{tableName}" ("ID", "{columnName}") VALUES (2, $p)
             """, new { p = value });
 
         // The value that was put in comes back out.

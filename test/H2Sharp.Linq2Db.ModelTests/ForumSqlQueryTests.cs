@@ -48,7 +48,7 @@ public class ForumSqlQueryTests
                 """
                 SELECT "Id", "ForumId", "AuthorId", "Title", "Body", "CreatedAt", "LastPostAt", "ViewCount"
                 FROM "Topics"
-                WHERE "ForumId" = @forumId
+                WHERE "ForumId" = $forumId
                 ORDER BY "Id"
                 """,
                 new { forumId })
@@ -84,7 +84,7 @@ public class ForumSqlQueryTests
                 SELECT "t"."Title"
                 FROM "Topics" "t"
                 INNER JOIN "Forums" "f" ON "t"."ForumId" = "f"."Id"
-                WHERE "f"."Name" = @name
+                WHERE "f"."Name" = $name
                 ORDER BY "t"."Id"
                 """,
                 new { name = "Programming" })
@@ -125,7 +125,7 @@ public class ForumSqlQueryTests
                 """
                 SELECT "Title"
                 FROM "Topics"
-                WHERE "Title" LIKE @pattern
+                WHERE "Title" LIKE $pattern
                 ORDER BY "Id"
                 """,
                 new { pattern = "%compiler%" })

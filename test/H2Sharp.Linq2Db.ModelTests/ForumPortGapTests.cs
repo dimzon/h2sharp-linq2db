@@ -68,10 +68,10 @@ public class ForumPortGapTests
 
         // The array is handed over as a DataParameter: an anonymous object drops array
         // properties from the command (a provider-side gap, tracked in DIVERGENCES),
-        // while a DataParameter arrives and the engine reads = ANY(@ids).
+        // while a DataParameter arrives and the engine reads = ANY($ids).
         List<int> ids = db.Query<int>(
                 """
-                SELECT "Id" FROM "Topics" WHERE "Id" = ANY(@ids)
+                SELECT "Id" FROM "Topics" WHERE "Id" = ANY($ids)
                 """,
                 new DataParameter("ids", new[] { 1, 2, 3 }))
             .ToList();

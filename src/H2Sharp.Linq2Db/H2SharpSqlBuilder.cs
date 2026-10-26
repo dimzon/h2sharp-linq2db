@@ -215,10 +215,10 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
     public override StringBuilder Convert(StringBuilder sb, string value, ConvertType convertType)
         => convertType switch
         {
-            // H2 names a parameter "@name" and rewrites it into "?" before the statement is parsed.
+            // H2Sharp names a parameter "$name" and rewrites it into "$N" before the statement is parsed.
             ConvertType.NameToQueryParameter or
             ConvertType.NameToCommandParameter or
-            ConvertType.NameToSprocParameter => sb.Append('@').Append(value),
+            ConvertType.NameToSprocParameter => sb.Append('$').Append(value),
 
             // H2 folds an unquoted identifier to upper case and leaves a quoted one alone, so the
             // two spellings of the same name are two different names. Every identifier is quoted
@@ -234,6 +234,17 @@ public class H2SharpSqlBuilder : BasicSqlBuilder<H2SharpOptions>
 
             _ => base.Convert(sb, value, convertType)
         };
+
+    /// <inheritdoc />
+    protected override void PrintParameterName(StringBuilder sb, DbParameter parameter)
+    {
+        if (!parameter.ParameterName.StartsWith('$'))
+        {
+            _ = sb.Append('$');
+        }
+
+        _ = sb.Append(parameter.ParameterName);
+    }
 
     /// <inheritdoc />
     /// <remarks>

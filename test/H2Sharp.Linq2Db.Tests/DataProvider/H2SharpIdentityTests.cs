@@ -64,7 +64,7 @@ public class H2SharpIdentityTests
             )
             VALUES
             (
-            	@Name
+            	$Name
             )
             )
             """.ReplaceLineEndings("\n"),

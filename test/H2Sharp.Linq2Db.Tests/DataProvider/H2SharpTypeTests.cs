@@ -86,7 +86,7 @@ public class H2SharpTypeTests
 
         // H2 2.5 takes two parameters in one expression, and the port rewrites the names of the
         // parameters into question marks and reads the expression.
-        Assert.Equal(5, db.Execute<int>("SELECT @p1 + @p2", new { p1 = 2, p2 = 3 }));
+        Assert.Equal(5, db.Execute<int>("SELECT $p1 + $p2", new { p1 = 2, p2 = 3 }));
     }
 
     [Fact]
@@ -94,10 +94,10 @@ public class H2SharpTypeTests
     {
         using var db = H2SharpDatabase.Open(nameof(A_parameter_comes_back_as_it_went_in));
 
-        Assert.Equal("1", db.Execute<string>("SELECT @p", new { p = "1" }));
-        Assert.Equal(1, db.Execute<int>("SELECT @p", new { p = new DataParameter { Value = 1 } }));
-        Assert.Equal("1", db.Execute<string>("SELECT @p1", new { p1 = new DataParameter { Value = "1" } }));
-        Assert.Equal("1", db.Execute<string>("SELECT @p", new { p = 1 }));
+        Assert.Equal("1", db.Execute<string>("SELECT $p", new { p = "1" }));
+        Assert.Equal(1, db.Execute<int>("SELECT $p", new { p = new DataParameter { Value = 1 } }));
+        Assert.Equal("1", db.Execute<string>("SELECT $p1", new { p1 = new DataParameter { Value = "1" } }));
+        Assert.Equal("1", db.Execute<string>("SELECT $p", new { p = 1 }));
     }
 
     [Fact]
@@ -109,8 +109,8 @@ public class H2SharpTypeTests
 
         Assert.Equal(date, db.Execute<DateTime>("SELECT Cast('2012-12-12' as date)"));
         Assert.Equal(date, db.Execute<DateTime?>("SELECT Cast('2012-12-12' as date)"));
-        Assert.Equal(date, db.Execute<DateTime>("SELECT @p", DataParameter.Date("p", date)));
-        Assert.Equal(date, db.Execute<DateTime?>("SELECT @p", new DataParameter("p", date, DataType.Date)));
+        Assert.Equal(date, db.Execute<DateTime>("SELECT $p", DataParameter.Date("p", date)));
+        Assert.Equal(date, db.Execute<DateTime?>("SELECT $p", new DataParameter("p", date, DataType.Date)));
     }
 
     [Fact]
@@ -122,9 +122,9 @@ public class H2SharpTypeTests
 
         Assert.Equal(dateTime, db.Execute<DateTime>("SELECT Cast('2012-12-12 12:12:12' as timestamp)"));
         Assert.Equal(dateTime, db.Execute<DateTime?>("SELECT Cast('2012-12-12 12:12:12' as timestamp)"));
-        Assert.Equal(dateTime, db.Execute<DateTime>("SELECT @p", DataParameter.DateTime("p", dateTime)));
-        Assert.Equal(dateTime, db.Execute<DateTime?>("SELECT @p", new DataParameter("p", dateTime)));
-        Assert.Equal(dateTime, db.Execute<DateTime?>("SELECT @p", new DataParameter("p", dateTime, DataType.DateTime)));
+        Assert.Equal(dateTime, db.Execute<DateTime>("SELECT $p", DataParameter.DateTime("p", dateTime)));
+        Assert.Equal(dateTime, db.Execute<DateTime?>("SELECT $p", new DataParameter("p", dateTime)));
+        Assert.Equal(dateTime, db.Execute<DateTime?>("SELECT $p", new DataParameter("p", dateTime, DataType.DateTime)));
     }
 
     [Fact]
@@ -142,24 +142,24 @@ public class H2SharpTypeTests
         Assert.Equal('1', db.Execute<char>("SELECT Cast('1' as varchar(20))"));
         Assert.Equal('1', db.Execute<char?>("SELECT Cast('1' as varchar(20))"));
 
-        Assert.Equal('1', db.Execute<char>("SELECT @p", DataParameter.Char("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT @p", DataParameter.Char("p", '1')));
-        Assert.Equal('1', db.Execute<char>("SELECT Cast(@p as char)", DataParameter.Char("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT Cast(@p as char)", DataParameter.Char("p", '1')));
-        Assert.Equal('1', db.Execute<char>("SELECT Cast(@p as char(1))", DataParameter.Char("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT Cast(@p as char(1))", DataParameter.Char("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT $p", DataParameter.Char("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT $p", DataParameter.Char("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT Cast($p as char)", DataParameter.Char("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT Cast($p as char)", DataParameter.Char("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT Cast($p as char(1))", DataParameter.Char("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT Cast($p as char(1))", DataParameter.Char("p", '1')));
 
-        Assert.Equal('1', db.Execute<char>("SELECT @p", DataParameter.VarChar("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT @p", DataParameter.VarChar("p", '1')));
-        Assert.Equal('1', db.Execute<char>("SELECT @p", DataParameter.NChar("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT @p", DataParameter.NChar("p", '1')));
-        Assert.Equal('1', db.Execute<char>("SELECT @p", DataParameter.NVarChar("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT @p", DataParameter.NVarChar("p", '1')));
-        Assert.Equal('1', db.Execute<char>("SELECT @p", DataParameter.Create("p", '1')));
-        Assert.Equal('1', db.Execute<char?>("SELECT @p", DataParameter.Create("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT $p", DataParameter.VarChar("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT $p", DataParameter.VarChar("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT $p", DataParameter.NChar("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT $p", DataParameter.NChar("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT $p", DataParameter.NVarChar("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT $p", DataParameter.NVarChar("p", '1')));
+        Assert.Equal('1', db.Execute<char>("SELECT $p", DataParameter.Create("p", '1')));
+        Assert.Equal('1', db.Execute<char?>("SELECT $p", DataParameter.Create("p", '1')));
 
-        Assert.Equal('1', db.Execute<char>("SELECT @p", new DataParameter { Name = "p", Value = '1' }));
-        Assert.Equal('1', db.Execute<char?>("SELECT @p", new DataParameter { Name = "p", Value = '1' }));
+        Assert.Equal('1', db.Execute<char>("SELECT $p", new DataParameter { Name = "p", Value = '1' }));
+        Assert.Equal('1', db.Execute<char?>("SELECT $p", new DataParameter { Name = "p", Value = '1' }));
     }
 
     [Fact]
@@ -176,16 +176,16 @@ public class H2SharpTypeTests
         Assert.Equal("12345", db.Execute<string>("SELECT Cast('12345' as varchar(20))"));
         Assert.Null(db.Execute<string>("SELECT Cast(NULL as varchar(20))"));
 
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.Char("p", "123")));
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.VarChar("p", "123")));
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.Text("p", "123")));
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.NChar("p", "123")));
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.NVarChar("p", "123")));
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.NText("p", "123")));
-        Assert.Equal("123", db.Execute<string>("SELECT @p", DataParameter.Create("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.Char("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.VarChar("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.Text("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.NChar("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.NVarChar("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.NText("p", "123")));
+        Assert.Equal("123", db.Execute<string>("SELECT $p", DataParameter.Create("p", "123")));
 
-        Assert.Null(db.Execute<string>("SELECT @p", DataParameter.Create("p", (string?)null)));
-        Assert.Equal("1", db.Execute<string>("SELECT @p", new DataParameter { Name = "p", Value = "1" }));
+        Assert.Null(db.Execute<string>("SELECT $p", DataParameter.Create("p", (string?)null)));
+        Assert.Equal("1", db.Execute<string>("SELECT $p", new DataParameter { Name = "p", Value = "1" }));
     }
 
     [Fact]
@@ -197,12 +197,12 @@ public class H2SharpTypeTests
 
         Assert.Equal(bytes, db.Execute<byte[]>("SELECT X'3039'"));
 
-        Assert.Equal(bytes, db.Execute<byte[]>("SELECT @p", DataParameter.Binary("p", bytes)));
-        Assert.Equal(bytes, db.Execute<byte[]>("SELECT @p", DataParameter.VarBinary("p", bytes)));
-        Assert.Equal(bytes, db.Execute<byte[]>("SELECT @p", DataParameter.Create("p", bytes)));
-        Assert.Null(db.Execute<byte[]>("SELECT @p", DataParameter.VarBinary("p", null)));
-        Assert.Equal(Array.Empty<byte>(), db.Execute<byte[]>("SELECT @p", DataParameter.VarBinary("p", Array.Empty<byte>())));
-        Assert.Equal(bytes, db.Execute<byte[]>("SELECT @p", new DataParameter { Name = "p", Value = bytes }));
+        Assert.Equal(bytes, db.Execute<byte[]>("SELECT $p", DataParameter.Binary("p", bytes)));
+        Assert.Equal(bytes, db.Execute<byte[]>("SELECT $p", DataParameter.VarBinary("p", bytes)));
+        Assert.Equal(bytes, db.Execute<byte[]>("SELECT $p", DataParameter.Create("p", bytes)));
+        Assert.Null(db.Execute<byte[]>("SELECT $p", DataParameter.VarBinary("p", null)));
+        Assert.Equal(Array.Empty<byte>(), db.Execute<byte[]>("SELECT $p", DataParameter.VarBinary("p", Array.Empty<byte>())));
+        Assert.Equal(bytes, db.Execute<byte[]>("SELECT $p", new DataParameter { Name = "p", Value = bytes }));
     }
 
     [Fact]
@@ -215,8 +215,8 @@ public class H2SharpTypeTests
         Assert.Equal(guid, db.Execute<Guid>("SELECT Cast('6F9619FF-8B86-D011-B42D-00C04FC964FF' as uuid)"));
         Assert.Equal(guid, db.Execute<Guid?>("SELECT Cast('6F9619FF-8B86-D011-B42D-00C04FC964FF' as uuid)"));
 
-        Assert.Equal(guid, db.Execute<Guid>("SELECT @p", DataParameter.Create("p", guid)));
-        Assert.Equal(guid, db.Execute<Guid>("SELECT @p", new DataParameter { Name = "p", Value = guid }));
+        Assert.Equal(guid, db.Execute<Guid>("SELECT $p", DataParameter.Create("p", guid)));
+        Assert.Equal(guid, db.Execute<Guid>("SELECT $p", new DataParameter { Name = "p", Value = guid }));
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class H2SharpTypeTests
         var json = /*lang=json,strict*/ "{\"name\":\"bob\", \"age\":10}";
 
         // The engine stores the document canonically.
-        Assert.Equal("{\"name\":\"bob\",\"age\":10}", db.Execute<string>("SELECT @p", new DataParameter("p", json, DataType.Json)));
+        Assert.Equal("{\"name\":\"bob\",\"age\":10}", db.Execute<string>("SELECT $p", new DataParameter("p", json, DataType.Json)));
     }
 
     private static object? Value(Type type)

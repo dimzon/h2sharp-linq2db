@@ -41,7 +41,7 @@
 
 | Симптом | Причина | Починка |
 |---|---|---|
-| `INSERT INTO "Rows" (Id, Name, Price) VALUES (Id, Name, Price)` — значения выходили именами столбцов, и движок отвечал `ExpressionColumn.GetValue: no resolver is set on this expression` | Провайдер не переопределял `Convert`. Базовый `Convert` в linq2db пишет имя **как есть**, потому что префикс параметра — дело каждого провайдера: PostgreSQL пишет `:` , Oracle — `:` , а H2 должен писать `@`. Имена столбцов при этом тоже выходили без кавычек, а H2 складывает некавыченное в верхний регистр | `H2SharpSqlBuilder.Convert` переопределён: параметры — `@имя`, все идентификаторы — в кавычках |
+| `INSERT INTO "Rows" (Id, Name, Price) VALUES (Id, Name, Price)` — значения выходили именами столбцов, и движок отвечал `ExpressionColumn.GetValue: no resolver is set on this expression` | Провайдер не переопределял `Convert`. Базовый `Convert` в linq2db пишет имя **как есть**, потому что префикс параметра — дело каждого провайдера: PostgreSQL пишет `:` , Oracle — `:` , а H2Sharp пишет `$`. Имена столбцов при этом тоже выходили без кавычек, а H2 складывает некавыченное в верхний регистр | `H2SharpSqlBuilder.Convert` переопределён: параметры — `$имя`, все идентификаторы — в кавычках |
 
 Найдено это было **инструментированной локальной копией ядра linq2db**: в `BasicSqlBuilder` печатается
 выражение-значение вставки, в `DataProviderBase.InitCommand` — сам SQL и параметры. Обе точки
@@ -76,7 +76,7 @@
 | чтение большого объекта | `ValueLob.copyToResult: lob storage is not ported` — контракт ADO у порта уже верный: `GetValue` отдаёт материализованное значение (`string` для `clob`, `byte[]` для `blob`), поток идёт через `GetStream`/`GetTextReader`; не хватает одного шага — `ValueLob.CopyToResult` переносит содержимое LOB в результат, а он не портирован | дефект порта |
 | `TIME` из `TimeSpan` | **исправлен провайдер**: SetParameter теперь вызывает стандартный SetParameterType, поэтому DataType.Time передаётся как DbType.Time. TimeOnly также принимается движком как TIME. Необъявленный TimeSpan остаётся INTERVAL | — |
 | два параметра в выражении | `SELECT ? [*]+ ?` — ожидалось `statement` | дефект порта |
-| `LIMIT` с параметром | **читается** (движок перенёс счётчики `LIMIT` как выражения и считает их в момент выполнения): `LIMIT @p` принимается, и эталон на JVM отвечает тем же | — |
+| `LIMIT` с параметром | **читается** (движок перенёс счётчики `LIMIT` как выражения и считает их в момент выполнения): `LIMIT $p` принимается, и эталон на JVM отвечает тем же | — |
 | удвоенная кавычка в имени | `Tokenizer.ReadQuotedIdentifier` не читает `""` внутри имени | дефект порта |
 | `CREATE SEQUENCE` (в DDL провайдера) | **читается** (движок перенёс последовательности): `CREATE SEQUENCE "SequenceRows_Id"` принимается | — |
 | `CREATE ALIAS` (функции) | `CREATE [*]ALIAS "PARAM_FN" AS $$ ... $$` — ожидалось `TABLE` | дефект порта |
@@ -90,7 +90,7 @@
 | `INTERSECT`/`EXCEPT` | **читаются** (коммит движка «Port set operations» `69d522a`): `INTERSECT` и `EXCEPT` отвечают строками | — |
 | `LISTAGG` с `WITHIN GROUP` | **читается** (коммит движка `69d522a`): `WITHIN GROUP (ORDER BY ...)` отвечает | — |
 | `FILTER (WHERE ...)` | **читается** (коммит движка `69d522a`): у агрегата условие применяется | — |
-| `= ANY` с параметром | **читается** (движок `dc67fbc`): `= ANY(@ids)` с параметром-массивом отвечает строками | — |
+| `= ANY` с параметром | **читается** (движок `dc67fbc`): `= ANY($ids)` с параметром-массивом отвечает строками | — |
 | чтение `JSON` | **читается**: колонка `JSON` хранит документ; H2 хранит его канонически (`{"a":1}`) | — |
 | `ENUM` | **читается** (коммит движка `56787de`): значения — строки, дубли запрещены, порядок перечисления; провайдеры держат енумы в числовых колонках и на тип `ENUM` не переходят | — |
 | `TIME WITH TIME ZONE` и `INTERVAL` в DDL | `ожидалось ")"`: эталон оба типа читает (`TIME WITH TIME ZONE`, `INTERVAL YEAR`) | дефект порта (та же семья, что dimzon/h2sharp#14 — типы в DDL) |
@@ -145,7 +145,7 @@
 
 | Что | Симптом | Где |
 |---|---|---|
-| анонимный объект с массивом | `db.Query(sql, new { ids = new[] {1,2,3} })` не добавляет параметр в команду (`Command.Parameters.Count == 0`), SQL остаётся с `@ids`, и движок отвечает «variables (@name) are not ported». Надо передавать `new DataParameter("ids", ...)` | дефект провайдера (механизм анонимок linq2db, не движок): см. `ForumPortGapTests` |
+| анонимный объект с массивом | `db.Query(sql, new { ids = new[] {1,2,3} })` не добавляет параметр в команду (`Command.Parameters.Count == 0`), SQL остаётся с `$ids`, и движок отвечает «variables (@name) are not ported». Надо передавать `new DataParameter("ids", ...)` | дефект провайдера (механизм анонимок linq2db, не движок): см. `ForumPortGapTests` |
 
 Остальное в провайдере работает: запрос, вставка, фильтр с параметром и порядок — все идут
 через linq2db в движок и возвращают то, что положили.
@@ -182,7 +182,7 @@
 Формы, которые провайдер пишет, сверены с эталоном: `EXTRACT(YEAR FROM …)`, `EXTRACT(DOW FROM …)`,
 `EXTRACT(DOY FROM …)`, `EXTRACT(WEEK FROM …)`, `EXTRACT(QUARTER FROM …)`,
 `EXTRACT(MILLISECOND FROM …)`, `DATEADD(DAY, 1, …)`, `DATEDIFF(DAY, a, b)`, `LOCATE`, `CONCAT`,
-`SUBSTRING`, `CAST`, `COALESCE`, `CASE WHEN`, `LIMIT @p` — jar H2 2.5 на JVM принимает их все и
+`SUBSTRING`, `CAST`, `COALESCE`, `CASE WHEN`, `LIMIT $p` — jar H2 2.5 на JVM принимает их все и
 отвечает то, что отвечает .NET.
 
 **Что из этого провайдер не смог.** День недели: H2 2.5 считает дни недели по ISO (понедельник —

@@ -298,7 +298,7 @@ the statement and not as a parameter, so the provider writes it in:
 
 ```csharp
 H2SharpSpecificExtensions.DateAdd("DAY", 1, blog.Created)
-// DATEADD('DAY', @p0, "Created")
+// DATEADD('DAY', $p0, "Created")
 ```
 
 **`LOCATE` takes the substring first.** H2 2.5 has the arguments the other way round from the
@@ -428,7 +428,7 @@ the catalogue compares every column of it with the reference and names both.
 | Types | H2's own: `varchar`, `char`, `numeric`, `varbinary`, `uuid`, `json`, `clob`, `blob`, `timestamp`, `time`, `boolean`, `smallint`, `integer`, `bigint`, `real`, `double` |
 | Paging | `LIMIT n` / `OFFSET n`, with the number as a parameter |
 | Concatenation | `CONCAT(a, b)` — the function H2 2.5 has |
-| Parameters | named `@name`, which the engine rewrites into `?` before the statement is parsed |
+| Parameters | named `$name`, which the ADO layer rewrites into `$N` before the statement is parsed |
 | Table alias | without the `AS`: `FROM "Blogs" "b"` — the grammar allows both spellings ("[ [ AS ] newTableAlias ]"), and the bare one is the shorter |
 
 The capabilities the provider declares are H2 2.5's, not the engine's current ones: a provider
@@ -441,7 +441,7 @@ Two things to know when a query does not do what it should:
   `FINAL TABLE`, which is the form the H2 grammar has for it:
 
   ```sql
-  SELECT "Id" FROM FINAL TABLE (INSERT INTO "Rows" ("Name") VALUES (@Name));
+  SELECT "Id" FROM FINAL TABLE (INSERT INTO "Rows" ("Name") VALUES ($Name));
   ```
 
   The engine reads `FINAL TABLE` now, so the value comes to the caller.
